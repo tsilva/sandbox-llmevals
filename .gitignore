@@ -1,0 +1,42 @@
+# OS / editor
+.DS_Store
+.vscode/
+
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Local environment files
+.python-version
+.env
+.env.*
+!.env.example
+
+# Local evaluation caches
+.cache/
+.litellm_cache/
+
+# Top-level run outputs
+results/
+results-*/
+*_stdout.log
+*_stderr.log
+*_time.txt
+
+# Local debug artifacts
+debug_*.json
+
+# Benchmark outputs
+benchmarks/

@@ -1,0 +1,13 @@
+[project]
+name = "llmevals"
+version = "0.1.0"
+description = "Local lighteval wrappers for LM Studio-backed model evaluation"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "lighteval[litellm]==0.13.0",
+    "pyarrow>=21.0.0",
+    "pyyaml>=6.0.2",
+]
+
+[tool.uv]
+package = false
