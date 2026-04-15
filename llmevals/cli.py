@@ -8,8 +8,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import urllib.error
-import urllib.request
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -17,6 +15,7 @@ from typing import Any
 import yaml
 
 from .config import ROOT_DIR, resolve_settings, set_nested
+from .runtime import api_key_from_env, build_litellm_model_parameters, ensure_lm_studio, start_server, stop_server
 
 
 def env_str(name: str) -> str | None:
@@ -39,16 +38,6 @@ def env_bool(name: str) -> bool | None:
     if normalized in {"0", "false", "no", "off"}:
         return False
     raise ValueError(f"Invalid boolean value for {name}: {value}")
-
-
-def deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
-    merged = deepcopy(base)
-    for key, value in overlay.items():
-        if isinstance(value, dict) and isinstance(merged.get(key), dict):
-            merged[key] = deep_merge(merged[key], value)
-        else:
-            merged[key] = deepcopy(value)
-    return merged
 
 
 def build_overrides(args: argparse.Namespace) -> dict[str, Any]:
@@ -94,50 +83,8 @@ def resolve_runtime_settings(args: argparse.Namespace) -> dict[str, Any]:
     )
 
 
-def ensure_lm_studio(base_url: str, api_key: str | None) -> None:
-    url = f"{base_url.rstrip('/')}/models"
-    request = urllib.request.Request(url)
-    if api_key:
-        request.add_header("Authorization", f"Bearer {api_key}")
-    try:
-        with urllib.request.urlopen(request, timeout=5):
-            return
-    except urllib.error.URLError as exc:
-        raise SystemExit(f"LM Studio is not reachable at {url}: {exc}") from exc
-
-
 def build_lighteval_model_config(settings: dict[str, Any], api_key: str | None) -> dict[str, Any]:
-    model_cfg = settings["model"]
-    benchmark_cfg = settings["benchmark"]
-    lighteval_cfg = benchmark_cfg["lighteval"]
-
-    generation_parameters = deepcopy(lighteval_cfg.get("generation_parameters", {}))
-    generation_parameters.setdefault("max_new_tokens", int(lighteval_cfg["max_gen_toks"]))
-
-    model_parameters = {
-        "model_name": model_cfg["litellm_model_name"],
-        "base_url": model_cfg["lm_studio"]["base_url"].rstrip("/"),
-        "api_key": api_key or "dummy",
-        "concurrent_requests": int(lighteval_cfg["concurrent_requests"]),
-        "max_model_length": int(lighteval_cfg["max_length"]),
-        "cache_dir": benchmark_cfg["cache_dir"],
-        "generation_parameters": generation_parameters,
-    }
-
-    model_parameters = deep_merge(
-        model_parameters,
-        model_cfg.get("extra_lighteval_model_parameters", {}),
-    )
-    model_parameters = deep_merge(
-        model_parameters,
-        lighteval_cfg.get("model_parameters", {}),
-    )
-
-    system_prompt = lighteval_cfg.get("system_prompt", "")
-    if system_prompt:
-        model_parameters["system_prompt"] = system_prompt
-
-    return {"model_parameters": model_parameters}
+    return {"model_parameters": build_litellm_model_parameters(settings, api_key)}
 
 
 def write_model_config_file(settings: dict[str, Any], api_key: str | None) -> Path:
@@ -190,14 +137,22 @@ def execute_lighteval(
     stdout: Any = None,
     stderr: Any = None,
 ) -> int:
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = api_key_from_env()
     ensure_lm_studio(settings["model"]["lm_studio"]["base_url"], api_key)
 
     cache_dir = Path(settings["benchmark"]["cache_dir"])
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     model_config_path = write_model_config_file(settings, api_key)
-    cmd = build_lighteval_command(settings, model_config_path, extra_args)
+    uv_bin = os.environ.get("UV_BIN", "uv")
+    cmd = [
+        uv_bin,
+        "run",
+        "--no-sync",
+        "python",
+        "-m",
+        *build_lighteval_command(settings, model_config_path, extra_args),
+    ]
 
     try:
         completed = subprocess.run(
@@ -210,54 +165,6 @@ def execute_lighteval(
         return completed.returncode
     finally:
         model_config_path.unlink(missing_ok=True)
-
-
-def run_command(cmd: list[str], *, check: bool, quiet: bool = False) -> int:
-    stdout = subprocess.DEVNULL if quiet else None
-    stderr = subprocess.DEVNULL if quiet else None
-    completed = subprocess.run(cmd, cwd=ROOT_DIR, check=False, stdout=stdout, stderr=stderr)
-    if check and completed.returncode != 0:
-        raise subprocess.CalledProcessError(completed.returncode, cmd)
-    return completed.returncode
-
-
-def stop_server(identifier: str) -> None:
-    run_command(["lms", "server", "stop"], check=False, quiet=True)
-    run_command(["lms", "unload", identifier], check=False, quiet=True)
-    run_command(["lms", "unload", "-a"], check=False, quiet=True)
-
-
-def start_server(
-    *,
-    model_id: str,
-    identifier: str,
-    port: int,
-    bind_address: str,
-    parallel: int,
-    context_length: int,
-    gpu: str,
-) -> None:
-    stop_server(identifier)
-    run_command(["lms", "server", "start", "--port", str(port), "--bind", bind_address], check=True, quiet=True)
-    run_command(
-        [
-            "lms",
-            "load",
-            model_id,
-            "--yes",
-            "--identifier",
-            identifier,
-            "--parallel",
-            str(parallel),
-            "--context-length",
-            str(context_length),
-            "--gpu",
-            gpu,
-        ],
-        check=True,
-    )
-
-
 def latest_results_json(output_dir: Path) -> Path | None:
     candidates = sorted(output_dir.rglob("results_*.json"))
     return candidates[-1] if candidates else None
@@ -334,6 +241,7 @@ def command_start_server(args: argparse.Namespace) -> int:
     model_cfg = settings["model"]
     lm_studio = model_cfg["lm_studio"]
     start_server(
+        ROOT_DIR,
         model_id=model_cfg["id"],
         identifier=model_cfg["identifier"],
         port=int(lm_studio["port"]),
@@ -347,7 +255,7 @@ def command_start_server(args: argparse.Namespace) -> int:
 
 def command_stop_server(args: argparse.Namespace) -> int:
     settings = resolve_runtime_settings(args)
-    stop_server(settings["model"]["identifier"])
+    stop_server(ROOT_DIR, settings["model"]["identifier"])
     return 0
 
 
@@ -383,6 +291,7 @@ def command_benchmark_throughput(args: argparse.Namespace, extra_args: list[str]
         cache_dir.mkdir(parents=True, exist_ok=True)
 
         start_server(
+            ROOT_DIR,
             model_id=model_cfg["id"],
             identifier=model_cfg["identifier"],
             port=int(lm_studio["port"]),

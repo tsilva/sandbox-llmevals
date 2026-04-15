@@ -8,6 +8,7 @@ import yaml
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 CONFIGS_DIR = ROOT_DIR / "configs"
+WEB_RUNS_DIR = ROOT_DIR / "web_runs"
 
 DEFAULT_MODEL = "default"
 DEFAULT_BENCHMARK = "gsm8k"
@@ -53,6 +54,13 @@ def resolve_config_path(name_or_path: str | None, kind: str) -> Path:
             return candidate.resolve()
 
     raise FileNotFoundError(f"Could not resolve {kind[:-1]} config: {target}")
+
+
+def list_config_paths(kind: str) -> list[Path]:
+    config_dir = CONFIGS_DIR / kind
+    if not config_dir.is_dir():
+        return []
+    return sorted(config_dir.glob("*.yaml"))
 
 
 def _sanitize_task_name(task_name: str) -> str:

@@ -4,9 +4,13 @@ version = "0.1.0"
 description = "Local lighteval wrappers for LM Studio-backed model evaluation"
 requires-python = ">=3.11,<3.12"
 dependencies = [
+    "fastapi>=0.115.0",
+    "httpx>=0.28.0",
     "lighteval[litellm]==0.13.0",
     "pyarrow>=21.0.0",
     "pyyaml>=6.0.2",
+    "pytest>=8.3.0",
+    "uvicorn>=0.34.0",
 ]
 
 [tool.uv]

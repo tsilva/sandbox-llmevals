@@ -131,3 +131,9 @@ debug_*.json
 
 # Benchmark outputs
 benchmarks/
+
+# Web UI runtime state
+web_runs/
+
+# Local Codex project config
+.codex/

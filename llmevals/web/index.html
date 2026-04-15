@@ -1,0 +1,2688 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0d1117" />
+    <title>LLM Evals</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@200..700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --font-headline: "Sora", "Avenir Next", "Segoe UI", sans-serif;
+        --font-ui: "Manrope", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        --font-mono: "IBM Plex Mono", "SFMono-Regular", "SF Mono", Menlo, Consolas, monospace;
+
+        --bg: #0d1117;
+        --bg-elevated: #121821;
+        --surface: #151c26;
+        --surface-raised: #1a2330;
+        --surface-strong: #202b3a;
+        --border: #2b3747;
+        --border-soft: #223041;
+
+        --text: #eef3fb;
+        --text-soft: #b7c3d6;
+        --text-muted: #8895a9;
+
+        --primary: #69b7ff;
+        --primary-soft: rgba(105, 183, 255, 0.14);
+        --primary-ink: #071321;
+        --success: #5fd0a5;
+        --running: #7aa8ff;
+        --danger: #ff8b8f;
+
+        --radius-sm: 10px;
+        --radius-md: 16px;
+        --radius-lg: 22px;
+        --radius-pill: 999px;
+        --sidebar-width: 224px;
+        --topbar-height: 64px;
+        --transition: 160ms ease;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          linear-gradient(180deg, #0b1016 0%, #0d1117 35%, #111821 100%);
+        color: var(--text);
+        font-family: var(--font-ui);
+      }
+
+      body,
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button,
+      input,
+      select,
+      textarea,
+      a {
+        transition:
+          background-color var(--transition),
+          color var(--transition),
+          border-color var(--transition),
+          opacity var(--transition),
+          transform var(--transition);
+      }
+
+      button,
+      a {
+        cursor: pointer;
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      a:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 450,
+          "GRAD" 0,
+          "opsz" 24;
+        font-size: 18px;
+        line-height: 1;
+      }
+
+      .app-shell {
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: var(--sidebar-width);
+        background: rgba(13, 17, 23, 0.98);
+        border-right: 1px solid var(--border-soft);
+        display: flex;
+        flex-direction: column;
+        padding: 24px 18px 18px;
+        z-index: 20;
+      }
+
+      .brand-block {
+        display: grid;
+        gap: 6px;
+        padding: 0 8px 18px;
+      }
+
+      .brand-subtitle {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .brand-title {
+        margin: 0;
+        font-family: var(--font-headline);
+        font-size: 22px;
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+      }
+
+      .eyebrow,
+      .technical-label,
+      .meta-label,
+      .metric-label,
+      .payload-title,
+      .summary-label {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 11px;
+        line-height: 1.2;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .brand-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        min-height: 30px;
+        padding: 6px 10px;
+        border-radius: var(--radius-pill);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text-soft);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .brand-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success);
+      }
+
+      .nav-list {
+        display: grid;
+        gap: 6px;
+        margin-top: 6px;
+      }
+
+      .nav-link {
+        min-height: 44px;
+        padding: 0 14px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        text-align: left;
+      }
+
+      .nav-link:hover {
+        background: var(--surface);
+        border-color: var(--border);
+        color: var(--text);
+      }
+
+      .nav-link.is-active {
+        background: var(--surface-raised);
+        border-color: rgba(105, 183, 255, 0.35);
+        color: var(--text);
+        box-shadow: inset 3px 0 0 var(--primary);
+      }
+
+      .nav-link-label {
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .topbar {
+        position: fixed;
+        top: 0;
+        right: 0;
+        left: var(--sidebar-width);
+        height: var(--topbar-height);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 0 28px;
+        background: rgba(13, 17, 23, 0.92);
+        border-bottom: 1px solid var(--border-soft);
+        backdrop-filter: blur(10px);
+        z-index: 15;
+      }
+
+      .topbar-left,
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .route-title {
+        font-size: 16px;
+        font-weight: 700;
+        text-transform: capitalize;
+      }
+
+      .topbar-divider {
+        width: 1px;
+        height: 18px;
+        background: var(--border);
+      }
+
+      .topbar-context {
+        font-size: 13px;
+        color: var(--text-soft);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .topbar-chip {
+        min-height: 34px;
+        padding: 7px 12px;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text-soft);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .main {
+        margin-left: var(--sidebar-width);
+        padding: calc(var(--topbar-height) + 24px) 28px 28px;
+      }
+
+      .view {
+        display: none;
+        animation: fade-up 180ms ease both;
+      }
+
+      .view.is-active {
+        display: block;
+      }
+
+      .view-stack,
+      .shell-grid,
+      .form-grid,
+      .form-column,
+      .advanced-grid,
+      .config-preview,
+      .preview-panel,
+      .preview-stat-list,
+      .monitoring-main,
+      .progress-panel,
+      .history-list,
+      .sample-list,
+      .sample-panel-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .section-heading {
+        display: grid;
+        gap: 6px;
+      }
+
+      .section-title {
+        margin: 0;
+        font-family: var(--font-headline);
+        font-size: clamp(1.85rem, 3vw, 2.45rem);
+        line-height: 1.02;
+        letter-spacing: -0.04em;
+      }
+
+      .section-copy,
+      .panel-copy,
+      .hero-copy,
+      .field-note,
+      .preview-copy,
+      .mini-copy,
+      .result-note {
+        margin: 0;
+        color: var(--text-soft);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .panel,
+      .table-shell,
+      .launch-card,
+      .monitoring-rail,
+      .results-rail,
+      .sample-panel,
+      .metric-card,
+      .history-item,
+      .sample-row,
+      .preview-card,
+      .payload-card,
+      .summary-card,
+      .form-section {
+        background: var(--surface);
+        border: 1px solid var(--border);
+      }
+
+      .panel,
+      .table-shell,
+      .launch-card,
+      .monitoring-rail,
+      .results-rail,
+      .sample-panel {
+        border-radius: var(--radius-lg);
+        padding: 20px;
+      }
+
+      .panel-head,
+      .table-head,
+      .results-head,
+      .rail-head,
+      .summary-header,
+      .history-top,
+      .history-bottom,
+      .sample-row-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .hero-layout,
+      .hero-summary {
+        display: grid;
+        gap: 14px;
+      }
+
+      .hero-headline {
+        margin: 0;
+        font-size: clamp(1.35rem, 2.4vw, 1.9rem);
+        line-height: 1.08;
+        letter-spacing: -0.03em;
+      }
+
+      .status-pill,
+      .meta-pill,
+      .metric-pill,
+      .filter-button,
+      .sample-tag {
+        min-height: 30px;
+        padding: 6px 10px;
+        border-radius: var(--radius-pill);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .status-pill,
+      .meta-pill,
+      .metric-pill,
+      .sample-tag {
+        background: var(--surface-raised);
+        border: 1px solid var(--border);
+        color: var(--text-soft);
+      }
+
+      .status-pill[data-tone="running"] {
+        color: var(--running);
+        border-color: rgba(122, 168, 255, 0.35);
+      }
+
+      .status-pill[data-tone="finished"] {
+        color: var(--success);
+        border-color: rgba(95, 208, 165, 0.35);
+      }
+
+      .status-pill[data-tone="failed"] {
+        color: var(--danger);
+        border-color: rgba(255, 139, 143, 0.35);
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .meta-strip,
+      .metric-grid,
+      .launch-grid,
+      .monitoring-grid,
+      .results-grid,
+      .sample-section-grid,
+      .launch-summary-grid,
+      .result-overview {
+        display: grid;
+        gap: 14px;
+      }
+
+      .meta-strip,
+      .metric-grid,
+      .launch-summary-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .meta-block,
+      .summary-card,
+      .result-card {
+        padding: 14px;
+        border-radius: var(--radius-md);
+        background: var(--surface-raised);
+        border: 1px solid var(--border);
+      }
+
+      .meta-value,
+      .summary-value,
+      .preview-value,
+      .result-value {
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+      }
+
+      .summary-value {
+        margin-top: 8px;
+        font-weight: 700;
+      }
+
+      .metric-card {
+        padding: 16px;
+        border-radius: var(--radius-md);
+      }
+
+      .metric-value {
+        margin: 10px 0 0;
+        color: var(--text);
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+        overflow-wrap: anywhere;
+      }
+
+      .metric-note {
+        margin: 8px 0 0;
+        color: var(--text-soft);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .table-shell {
+        overflow: hidden;
+      }
+
+      .panel-title,
+      .rail-title,
+      .sample-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+        margin-top: 18px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 14px 12px;
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      th {
+        color: var(--text-muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-weight: 700;
+        border-bottom: 1px solid var(--border);
+      }
+
+      td {
+        border-bottom: 1px solid var(--border-soft);
+        font-size: 13px;
+        color: var(--text-soft);
+      }
+
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .table-primary {
+        color: var(--text);
+        font-weight: 700;
+      }
+
+      .table-secondary {
+        display: block;
+        margin-top: 4px;
+        color: var(--text-muted);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .action-row,
+      .button-row,
+      .chip-row,
+      .sample-meta,
+      .metrics-wrap {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .button,
+      .filter-button {
+        min-height: 38px;
+        padding: 0 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface-raised);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .button:hover,
+      .filter-button:hover {
+        background: var(--surface-strong);
+        border-color: rgba(105, 183, 255, 0.35);
+      }
+
+      .button-primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: var(--primary-ink);
+      }
+
+      .button-primary:hover {
+        filter: brightness(1.04);
+      }
+
+      .button-danger {
+        color: var(--danger);
+        border-color: rgba(255, 139, 143, 0.35);
+      }
+
+      .button.is-active,
+      .filter-button.is-active {
+        background: var(--primary-soft);
+        border-color: rgba(105, 183, 255, 0.42);
+        color: var(--primary);
+      }
+
+      .button:disabled {
+        opacity: 0.65;
+        cursor: progress;
+      }
+
+      .empty-state,
+      .feedback {
+        padding: 14px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--surface-raised);
+        color: var(--text-soft);
+        line-height: 1.55;
+      }
+
+      .feedback {
+        display: none;
+      }
+
+      .feedback[data-tone="neutral"] {
+        display: block;
+      }
+
+      .feedback[data-tone="error"] {
+        display: block;
+        color: #ffd5d7;
+        border-color: rgba(255, 139, 143, 0.35);
+        background: rgba(105, 22, 33, 0.32);
+      }
+
+      .launch-grid {
+        grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+        align-items: start;
+      }
+
+      .launch-card,
+      .preview-panel {
+        display: grid;
+        gap: 16px;
+      }
+
+      .form-section {
+        display: grid;
+        gap: 14px;
+        padding: 16px;
+        border-radius: var(--radius-md);
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+        color: var(--text-soft);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      input,
+      select {
+        width: 100%;
+        min-height: 46px;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: #0f141c;
+        color: var(--text);
+      }
+
+      input::placeholder {
+        color: var(--text-muted);
+      }
+
+      input:hover,
+      select:hover {
+        border-color: rgba(105, 183, 255, 0.35);
+      }
+
+      details {
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--surface-raised);
+        overflow: hidden;
+      }
+
+      summary {
+        list-style: none;
+        min-height: 48px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      summary::-webkit-details-marker {
+        display: none;
+      }
+
+      summary::after {
+        content: "+";
+        font-size: 18px;
+      }
+
+      details[open] summary::after {
+        content: "-";
+      }
+
+      .advanced-body {
+        padding: 0 16px 16px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .preview-card,
+      .payload-card {
+        padding: 16px;
+        border-radius: var(--radius-md);
+      }
+
+      .preview-title {
+        margin: 0 0 8px;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .preview-stat {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-soft);
+      }
+
+      .preview-stat:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .preview-stat strong {
+        font-size: 26px;
+        line-height: 1;
+        letter-spacing: -0.03em;
+      }
+
+      .monitoring-grid {
+        grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.75fr);
+        align-items: start;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 10px;
+        overflow: hidden;
+        border-radius: var(--radius-pill);
+        background: #0d1219;
+        border: 1px solid var(--border-soft);
+      }
+
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--running), var(--primary));
+      }
+
+      .error-panel {
+        display: none;
+        padding: 14px;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(255, 139, 143, 0.35);
+        background: rgba(105, 22, 33, 0.32);
+        color: #ffd5d7;
+      }
+
+      .history-list {
+        max-height: 620px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+
+      .history-item {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: var(--radius-md);
+        color: var(--text);
+        text-align: left;
+      }
+
+      .history-item:hover,
+      .sample-row:hover {
+        border-color: rgba(105, 183, 255, 0.3);
+      }
+
+      .history-item.is-active,
+      .sample-row.is-active {
+        border-color: rgba(105, 183, 255, 0.42);
+        box-shadow: inset 3px 0 0 var(--primary);
+        background: var(--surface-raised);
+      }
+
+      .history-primary {
+        display: grid;
+        gap: 4px;
+      }
+
+      .history-id {
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .history-caption,
+      .sample-row-copy {
+        color: var(--text-muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .history-mini-bar {
+        height: 6px;
+        border-radius: var(--radius-pill);
+        background: #0d1219;
+        border: 1px solid var(--border-soft);
+        overflow: hidden;
+      }
+
+      .history-mini-bar > div {
+        height: 100%;
+        background: linear-gradient(90deg, var(--running), var(--primary));
+      }
+
+      .results-grid {
+        grid-template-columns: minmax(280px, 32%) minmax(0, 1fr);
+        align-items: start;
+      }
+
+      .results-rail,
+      .sample-panel {
+        min-height: 440px;
+      }
+
+      .sample-list {
+        max-height: 720px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+
+      .sample-row {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: var(--radius-md);
+        color: var(--text);
+        text-align: left;
+      }
+
+      .sample-row-title {
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.4;
+      }
+
+      .sample-panel {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .sample-question {
+        margin: 0;
+        color: var(--text);
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      .sample-section-grid,
+      .result-overview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .payload-content,
+      .metrics-wrap {
+        margin: 0;
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        line-height: 1.65;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .result-card {
+        border-radius: var(--radius-md);
+      }
+
+      .result-note {
+        margin-top: 6px;
+        font-size: 13px;
+      }
+
+      .sample-tag.is-pass {
+        color: var(--success);
+        border-color: rgba(95, 208, 165, 0.35);
+      }
+
+      .sample-tag.is-fail {
+        color: var(--danger);
+        border-color: rgba(255, 139, 143, 0.35);
+      }
+
+      .sample-tag.is-pending {
+        color: var(--text-soft);
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @keyframes fade-up {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 1180px) {
+        .sidebar {
+          position: sticky;
+          inset: 0;
+          width: 100%;
+          border-right: 0;
+          border-bottom: 1px solid var(--border-soft);
+          padding-bottom: 14px;
+        }
+
+        .nav-list {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .topbar {
+          position: sticky;
+          left: 0;
+          width: 100%;
+        }
+
+        .main {
+          margin-left: 0;
+          padding-top: 22px;
+        }
+
+        .topbar,
+        .main {
+          left: 0;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .launch-grid,
+        .monitoring-grid,
+        .results-grid,
+        .meta-strip,
+        .metric-grid,
+        .launch-summary-grid,
+        .sample-section-grid,
+        .result-overview {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .launch-grid > *:first-child,
+        .monitoring-grid > *:first-child,
+        .results-grid > *:first-child {
+          grid-column: 1 / -1;
+        }
+
+        .topbar {
+          padding: 0 18px;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .nav-list,
+        .meta-strip,
+        .metric-grid,
+        .launch-grid,
+        .monitoring-grid,
+        .results-grid,
+        .launch-summary-grid,
+        .sample-section-grid,
+        .result-overview {
+          grid-template-columns: 1fr;
+        }
+
+        .main {
+          padding: 18px 14px 20px;
+        }
+
+        .topbar {
+          padding: 0 14px;
+        }
+
+        .topbar-left,
+        .topbar-right,
+        .panel-head,
+        .table-head,
+        .results-head,
+        .rail-head,
+        .summary-header,
+        .history-top,
+        .history-bottom,
+        .sample-row-top,
+        .button-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .table-scroll table,
+        .table-scroll thead,
+        .table-scroll tbody,
+        .table-scroll tr,
+        .table-scroll th,
+        .table-scroll td {
+          display: block;
+        }
+
+        .table-scroll thead {
+          display: none;
+        }
+
+        .table-scroll tr {
+          padding: 12px 0;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .table-scroll td {
+          padding: 10px 0;
+          border-bottom: 0;
+        }
+
+        .table-scroll td::before {
+          content: attr(data-label);
+          display: block;
+          margin-bottom: 4px;
+          color: var(--text-muted);
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <p class="brand-subtitle">Internal tooling</p>
+          <h1 class="brand-title">LLM Evals</h1>
+          <div class="brand-status">
+            <span class="brand-status-dot" aria-hidden="true"></span>
+            Evaluation console
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Primary">
+          <a id="nav-dashboard" class="nav-link" href="#dashboard" data-route="dashboard">
+            <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+            <span class="nav-link-label">Dashboard</span>
+          </a>
+          <a id="nav-launchpad" class="nav-link" href="#launchpad" data-route="launchpad">
+            <span class="material-symbols-outlined" aria-hidden="true">rocket_launch</span>
+            <span class="nav-link-label">Launchpad</span>
+          </a>
+          <a id="nav-monitoring" class="nav-link" href="#monitoring" data-route="monitoring">
+            <span class="material-symbols-outlined" aria-hidden="true">radar</span>
+            <span class="nav-link-label">Monitoring</span>
+          </a>
+          <a id="nav-results" class="nav-link" href="#results" data-route="results">
+            <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+            <span class="nav-link-label">Results</span>
+          </a>
+        </nav>
+
+      </aside>
+
+      <header class="topbar">
+        <div class="topbar-left">
+          <span id="route-title" class="route-title">Dashboard</span>
+          <span class="topbar-divider" aria-hidden="true"></span>
+          <span id="topbar-context" class="topbar-context">System overview</span>
+        </div>
+        <div class="topbar-right">
+          <div id="topbar-status-chip" class="topbar-chip">
+            <span class="material-symbols-outlined" aria-hidden="true">memory</span>
+            <span id="topbar-status-text">0 runs tracked</span>
+          </div>
+          <button id="topbar-refresh" class="button" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <main class="main">
+        <section id="view-dashboard" class="view" data-view="dashboard">
+          <div class="view-stack">
+            <div class="section-heading">
+              <p class="eyebrow">Dashboard</p>
+              <h2 class="section-title">Recent evaluation runs</h2>
+              <p class="section-copy">
+                Review persisted run history, see the latest benchmark status, and jump directly into monitoring or
+                sample inspection.
+              </p>
+            </div>
+
+            <div class="metric-grid">
+              <article class="metric-card">
+                <span class="metric-label">Total Runs</span>
+                <p id="dashboard-total-runs" class="metric-value">0</p>
+                <p class="metric-note">All persisted benchmark runs discovered by the web store.</p>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Active</span>
+                <p id="dashboard-active-runs" class="metric-value">0</p>
+                <p class="metric-note">Runs currently queued or streaming progress.</p>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Finished</span>
+                <p id="dashboard-finished-runs" class="metric-value">0</p>
+                <p class="metric-note">Runs with final benchmark scores available for inspection.</p>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Failed</span>
+                <p id="dashboard-failed-runs" class="metric-value">0</p>
+                <p class="metric-note">Runs that terminated before completion or were interrupted.</p>
+              </article>
+            </div>
+
+            <div class="shell-grid">
+              <article class="panel">
+                <div id="dashboard-latest" class="hero-layout"></div>
+              </article>
+            </div>
+
+            <article class="table-shell">
+              <div class="table-head">
+                <div>
+                  <p class="eyebrow">Run history</p>
+                  <h3 class="panel-title">All tracked runs</h3>
+                  <p class="panel-copy">Select a run to continue monitoring it or inspect sample-level outcomes.</p>
+                </div>
+                <div class="button-row">
+                  <button id="dashboard-open-launchpad" class="button button-primary" type="button">Start new evaluation</button>
+                </div>
+              </div>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Model</th>
+                      <th>Benchmark</th>
+                      <th>Status</th>
+                      <th>Score</th>
+                      <th>Updated</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-runs-table"></tbody>
+                </table>
+              </div>
+              <div id="dashboard-runs-empty" class="empty-state" hidden>
+                No runs yet. Start an evaluation to populate the dashboard.
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="view-launchpad" class="view" data-view="launchpad">
+          <div class="view-stack">
+            <div class="section-heading">
+              <p class="eyebrow">Launchpad</p>
+              <h2 class="section-title">Start a new evaluation</h2>
+              <p class="section-copy">
+                Choose the provider, model source, benchmark, and any explicit overrides the backend can already honor.
+              </p>
+            </div>
+
+            <div class="shell-grid launch-grid">
+              <article class="launch-card">
+                <div class="panel-head">
+                  <div>
+                    <p class="eyebrow">Configuration</p>
+                    <h3 class="panel-title">Evaluation setup</h3>
+                    <p class="panel-copy">The form only exposes fields that map directly to the current backend.</p>
+                  </div>
+                </div>
+
+                <form id="run-form" class="form-grid">
+                  <div class="form-column">
+                    <section class="form-section">
+                      <p class="eyebrow">Model</p>
+                      <p class="mini-copy">Pick a configured model or switch to a local LM Studio route.</p>
+                      <label>
+                        Provider
+                        <select id="provider" required>
+                          <option value="configured">Configured</option>
+                          <option value="local">Local (LM Studio)</option>
+                        </select>
+                      </label>
+
+                      <label>
+                        <span id="model-selection-label">Configured Model</span>
+                        <input
+                          id="model-selection"
+                          list="model-selection-options"
+                          required
+                          autocomplete="off"
+                          placeholder="Start typing a configured model..."
+                        />
+                        <datalist id="model-selection-options"></datalist>
+                        <span id="model-selection-note" class="field-note">Loading model details...</span>
+                      </label>
+                      <div id="model-selection-meta" class="chip-row"></div>
+
+                      <div id="model-template-wrap" hidden>
+                        <label>
+                          Runtime Template
+                          <select id="model-template"></select>
+                          <span class="field-note">
+                            Used for LM Studio defaults like base URL, parallelism, and context length when launching a
+                            local model.
+                          </span>
+                        </label>
+                      </div>
+                    </section>
+
+                    <section class="form-section">
+                      <p class="eyebrow">Benchmark</p>
+                      <p class="mini-copy">Select the benchmark config and review the resolved task metadata below.</p>
+                      <label>
+                        Benchmark Config
+                        <select id="benchmark-config" required></select>
+                        <span id="benchmark-config-note" class="field-note">Loading benchmark details...</span>
+                      </label>
+                      <div id="benchmark-config-meta" class="chip-row"></div>
+
+                      <label>
+                        Limit
+                        <input id="limit" type="number" min="1" placeholder="Optional sample cap" />
+                      </label>
+                    </section>
+                  </div>
+
+                  <details>
+                    <summary>Overrides</summary>
+                    <div class="advanced-body">
+                      <p class="field-note">
+                        Use overrides only when the run must target a specific model ID, identifier, or LiteLLM route.
+                      </p>
+                      <div class="advanced-grid">
+                        <label>
+                          Model ID Override
+                          <input id="model-id" placeholder="Optional LM Studio model key" />
+                        </label>
+                        <label>
+                          Identifier Override
+                          <input id="identifier" placeholder="Optional API identifier" />
+                        </label>
+                        <label>
+                          LiteLLM Model Name Override
+                          <input id="litellm-model-name" placeholder="Optional openai/..." />
+                        </label>
+                      </div>
+                    </div>
+                  </details>
+
+                  <p id="form-feedback" class="feedback" aria-live="polite"></p>
+                  <div class="button-row">
+                    <button id="start-button" class="button button-primary" type="submit">Start evaluation</button>
+                    <button id="launchpad-open-monitoring" class="button" type="button">Open monitoring</button>
+                  </div>
+                  <div class="launch-summary-grid">
+                    <div class="summary-card">
+                      <span class="summary-label">Provider</span>
+                      <div id="launch-summary-provider" class="summary-value">Configured</div>
+                    </div>
+                    <div class="summary-card">
+                      <span class="summary-label">Selected model</span>
+                      <div id="launch-summary-model" class="summary-value">No model selected</div>
+                    </div>
+                    <div class="summary-card">
+                      <span class="summary-label">Benchmark</span>
+                      <div id="launch-summary-benchmark" class="summary-value">No benchmark selected</div>
+                    </div>
+                    <div class="summary-card">
+                      <span class="summary-label">Effective limit</span>
+                      <div id="launch-summary-limit" class="summary-value">Default benchmark limit</div>
+                    </div>
+                  </div>
+                </form>
+              </article>
+
+              <aside class="launch-card preview-panel">
+                <div class="section-heading">
+                  <p class="eyebrow">Resolved Preview</p>
+                  <h3 class="panel-title">What this run will use</h3>
+                  <p class="preview-copy">
+                    These previews are derived from the config metadata the current backend already exposes.
+                  </p>
+                </div>
+
+                <div class="config-preview">
+                  <div class="preview-card">
+                    <h4 class="preview-title">Model route</h4>
+                    <div id="preview-model-value" class="preview-value">Select a model config to inspect the resolved route.</div>
+                  </div>
+                  <div class="preview-card">
+                    <h4 class="preview-title">Benchmark task</h4>
+                    <div id="preview-benchmark-value" class="preview-value">Select a benchmark config to inspect the task.</div>
+                  </div>
+                </div>
+
+                <div class="preview-card">
+                  <h4 class="preview-title">Available inventory</h4>
+                  <div class="preview-stat-list">
+                    <div class="preview-stat">
+                      <span class="technical-label">Available model configs</span>
+                      <strong id="preview-model-count">0</strong>
+                    </div>
+                    <div class="preview-stat">
+                      <span class="technical-label">Discoverable local models</span>
+                      <strong id="preview-local-model-count">0</strong>
+                    </div>
+                    <div class="preview-stat">
+                      <span class="technical-label">Available benchmarks</span>
+                      <strong id="preview-benchmark-count">0</strong>
+                    </div>
+                    <div class="preview-stat">
+                      <span class="technical-label">Persisted runs</span>
+                      <strong id="preview-run-count">0</strong>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-monitoring" class="view" data-view="monitoring">
+          <div class="view-stack">
+            <div class="section-heading">
+              <p class="eyebrow">Monitoring</p>
+              <h2 class="section-title">Track active and completed runs</h2>
+              <p class="section-copy">
+                Keep one selected run in focus, review recent history alongside it, and stream progress only while this
+                view is active.
+              </p>
+            </div>
+
+            <div class="shell-grid monitoring-grid">
+              <div class="monitoring-main">
+                <article class="panel">
+                  <div id="monitoring-run-panel" class="hero-layout"></div>
+                </article>
+
+                <article class="panel progress-panel">
+                  <div class="panel-head">
+                    <div>
+                      <p class="eyebrow">Progress</p>
+                      <h3 class="panel-title">Run completion</h3>
+                    </div>
+                    <div class="button-row">
+                      <button id="monitoring-refresh" class="button" type="button">Refresh run</button>
+                      <button id="monitoring-open-results" class="button" type="button">Open results</button>
+                    </div>
+                  </div>
+                  <div class="progress-bar">
+                    <div id="monitoring-progress-fill" class="progress-fill"></div>
+                  </div>
+                  <p id="monitoring-progress-copy" class="panel-copy">No run selected.</p>
+                  <div id="monitoring-error" class="error-panel"></div>
+                </article>
+              </div>
+
+              <aside class="monitoring-rail">
+                <div class="rail-head">
+                  <div>
+                    <p class="eyebrow">Run history</p>
+                    <h3 class="rail-title">Select a tracked run</h3>
+                  </div>
+                  <div id="monitoring-history-summary" class="meta-pill">0 runs</div>
+                </div>
+                <div id="monitoring-history" class="history-list"></div>
+                <div id="monitoring-history-empty" class="empty-state" hidden>
+                  No runs tracked yet. Start an evaluation to populate monitoring.
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-results" class="view" data-view="results">
+          <div class="view-stack">
+            <div class="section-heading">
+              <p class="eyebrow">Results</p>
+              <h2 class="section-title">Inspect sample outcomes</h2>
+              <p class="section-copy">
+                Scan pass and fail patterns, keep a selected sample pinned in the detail panel, and treat raw payloads
+                as supporting context instead of the default view.
+              </p>
+            </div>
+
+            <div class="shell-grid results-grid">
+              <aside class="results-rail">
+                <div class="rail-head">
+                  <div>
+                    <p class="eyebrow">Samples</p>
+                    <h3 class="rail-title">Current run samples</h3>
+                  </div>
+                </div>
+                <div class="button-row" id="results-filters" role="tablist" aria-label="Sample filters">
+                  <button class="filter-button is-active" type="button" data-filter="all">All</button>
+                  <button class="filter-button" type="button" data-filter="pass">Pass</button>
+                  <button class="filter-button" type="button" data-filter="fail">Fail</button>
+                </div>
+                <div class="chip-row">
+                  <span id="results-run-chip" class="meta-pill">No run selected</span>
+                  <span id="results-summary-chip" class="meta-pill">0 samples</span>
+                </div>
+                <div id="results-sample-list" class="sample-list"></div>
+                <div id="results-empty" class="empty-state" hidden>
+                  No samples available yet. Select a run with sample output to inspect it here.
+                </div>
+              </aside>
+
+              <article class="sample-panel">
+                <div id="results-detail" class="sample-panel-grid"></div>
+              </article>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const ROUTES = ["dashboard", "launchpad", "monitoring", "results"];
+
+      const state = {
+        route: "dashboard",
+        runs: [],
+        configs: {
+          model_configs: [],
+          benchmark_configs: [],
+        },
+        runDetails: {},
+        samplesByRun: {},
+        samplesLoadedByRun: {},
+        localModels: [],
+        localModelsLoaded: false,
+        localModelsError: null,
+        selectedRunId: null,
+        selectedSampleId: null,
+        sampleFilter: "all",
+        eventSource: null,
+        activeEventRunId: null,
+      };
+
+      const nodes = {
+        navLinks: document.querySelectorAll(".nav-link"),
+        routeTitle: document.getElementById("route-title"),
+        topbarContext: document.getElementById("topbar-context"),
+        topbarStatusText: document.getElementById("topbar-status-text"),
+        topbarRefresh: document.getElementById("topbar-refresh"),
+
+        views: document.querySelectorAll(".view"),
+
+        dashboardTotalRuns: document.getElementById("dashboard-total-runs"),
+        dashboardActiveRuns: document.getElementById("dashboard-active-runs"),
+        dashboardFinishedRuns: document.getElementById("dashboard-finished-runs"),
+        dashboardFailedRuns: document.getElementById("dashboard-failed-runs"),
+        dashboardLatest: document.getElementById("dashboard-latest"),
+        dashboardRunsTable: document.getElementById("dashboard-runs-table"),
+        dashboardRunsEmpty: document.getElementById("dashboard-runs-empty"),
+        dashboardOpenLaunchpad: document.getElementById("dashboard-open-launchpad"),
+
+        provider: document.getElementById("provider"),
+        modelSelection: document.getElementById("model-selection"),
+        modelSelectionOptions: document.getElementById("model-selection-options"),
+        modelSelectionLabel: document.getElementById("model-selection-label"),
+        modelSelectionNote: document.getElementById("model-selection-note"),
+        modelSelectionMeta: document.getElementById("model-selection-meta"),
+        modelTemplateWrap: document.getElementById("model-template-wrap"),
+        modelTemplate: document.getElementById("model-template"),
+        benchmarkConfig: document.getElementById("benchmark-config"),
+        modelId: document.getElementById("model-id"),
+        identifier: document.getElementById("identifier"),
+        litellmModelName: document.getElementById("litellm-model-name"),
+        limit: document.getElementById("limit"),
+        benchmarkConfigNote: document.getElementById("benchmark-config-note"),
+        benchmarkConfigMeta: document.getElementById("benchmark-config-meta"),
+        previewModelValue: document.getElementById("preview-model-value"),
+        previewBenchmarkValue: document.getElementById("preview-benchmark-value"),
+        previewModelCount: document.getElementById("preview-model-count"),
+        previewLocalModelCount: document.getElementById("preview-local-model-count"),
+        previewBenchmarkCount: document.getElementById("preview-benchmark-count"),
+        previewRunCount: document.getElementById("preview-run-count"),
+        launchSummaryProvider: document.getElementById("launch-summary-provider"),
+        launchSummaryModel: document.getElementById("launch-summary-model"),
+        launchSummaryBenchmark: document.getElementById("launch-summary-benchmark"),
+        launchSummaryLimit: document.getElementById("launch-summary-limit"),
+        runForm: document.getElementById("run-form"),
+        formFeedback: document.getElementById("form-feedback"),
+        startButton: document.getElementById("start-button"),
+        launchpadOpenMonitoring: document.getElementById("launchpad-open-monitoring"),
+
+        monitoringRunPanel: document.getElementById("monitoring-run-panel"),
+        monitoringProgressFill: document.getElementById("monitoring-progress-fill"),
+        monitoringProgressCopy: document.getElementById("monitoring-progress-copy"),
+        monitoringError: document.getElementById("monitoring-error"),
+        monitoringHistory: document.getElementById("monitoring-history"),
+        monitoringHistorySummary: document.getElementById("monitoring-history-summary"),
+        monitoringHistoryEmpty: document.getElementById("monitoring-history-empty"),
+        monitoringRefresh: document.getElementById("monitoring-refresh"),
+        monitoringOpenResults: document.getElementById("monitoring-open-results"),
+
+        resultsFilters: document.getElementById("results-filters"),
+        resultsRunChip: document.getElementById("results-run-chip"),
+        resultsSummaryChip: document.getElementById("results-summary-chip"),
+        resultsSampleList: document.getElementById("results-sample-list"),
+        resultsEmpty: document.getElementById("results-empty"),
+        resultsDetail: document.getElementById("results-detail"),
+      };
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
+      }
+
+      function formatDate(value) {
+        if (!value) return "-";
+        return new Date(value).toLocaleString();
+      }
+
+      function formatScore(value) {
+        if (value === null || value === undefined) return "-";
+        return Number(value).toFixed(3);
+      }
+
+      function humanStatus(status) {
+        if (!status) return "Idle";
+        return String(status).charAt(0).toUpperCase() + String(status).slice(1);
+      }
+
+      function statusTone(status) {
+        const normalized = String(status || "idle").toLowerCase();
+        if (normalized === "running") return "running";
+        if (normalized === "finished") return "finished";
+        if (normalized === "failed") return "failed";
+        if (normalized === "queued") return "idle";
+        return "idle";
+      }
+
+      function statusChip(success) {
+        if (success === true) return '<span class="sample-tag is-pass">Pass</span>';
+        if (success === false) return '<span class="sample-tag is-fail">Fail</span>';
+        return '<span class="sample-tag is-pending">Pending</span>';
+      }
+
+      function formatMetricValue(value) {
+        if (typeof value === "number") {
+          return value.toFixed(3);
+        }
+        return value === null || value === undefined || value === "" ? "-" : String(value);
+      }
+
+      function formatProgress(run) {
+        const total = run?.total_samples ?? "?";
+        const completed = run?.completed_samples ?? 0;
+        const percent = run?.total_samples ? Math.round((run.progress || 0) * 100) : completed ? 100 : 0;
+        return { completed, total, percent };
+      }
+
+      function extractQuestionPreview(rawPrompt) {
+        if (!rawPrompt) return "No prompt preview available.";
+        const matches = [...String(rawPrompt).matchAll(/\[user\]\s*Question:\s*([\s\S]*?)\nAnswer:/g)];
+        const question = matches.length ? matches[matches.length - 1][1].trim() : String(rawPrompt).trim();
+        return question.replace(/\s+/g, " ").slice(0, 180);
+      }
+
+      function routeLabel(route) {
+        const labels = {
+          dashboard: "Dashboard",
+          launchpad: "Launchpad",
+          monitoring: "Monitoring",
+          results: "Results",
+        };
+        return labels[route] || route;
+      }
+
+      function getSelectedRun() {
+        if (!state.selectedRunId) return null;
+        return state.runDetails[state.selectedRunId] || state.runs.find((run) => run.run_id === state.selectedRunId) || null;
+      }
+
+      function getSamplesForRun(runId) {
+        return [...(state.samplesByRun[runId] || [])].sort((left, right) => left.sample_index - right.sample_index);
+      }
+
+      function getSelectedRunSamples() {
+        if (!state.selectedRunId) return [];
+        return getSamplesForRun(state.selectedRunId);
+      }
+
+      function getFilteredSamples() {
+        const samples = getSelectedRunSamples();
+        if (state.sampleFilter === "pass") {
+          return samples.filter((sample) => sample.success === true);
+        }
+        if (state.sampleFilter === "fail") {
+          return samples.filter((sample) => sample.success === false);
+        }
+        return samples;
+      }
+
+      function updateRunInState(run) {
+        state.runDetails[run.run_id] = run;
+        const index = state.runs.findIndex((item) => item.run_id === run.run_id);
+        if (index >= 0) {
+          state.runs[index] = { ...state.runs[index], ...run };
+        } else {
+          state.runs = [run, ...state.runs];
+        }
+      }
+
+      function ensureSelectedSample() {
+        const filtered = getFilteredSamples();
+        if (!filtered.length) {
+          state.selectedSampleId = null;
+          return;
+        }
+        const found = filtered.some((sample) => sample.sample_id === state.selectedSampleId);
+        if (!found) {
+          state.selectedSampleId = filtered[0].sample_id;
+        }
+      }
+
+      function defaultRoute() {
+        return state.runs.length ? "dashboard" : "launchpad";
+      }
+
+      function routeFromHash() {
+        const raw = window.location.hash.replace(/^#/, "").trim();
+        return ROUTES.includes(raw) ? raw : null;
+      }
+
+      function setRoute(route, { replace = false } = {}) {
+        const next = ROUTES.includes(route) ? route : defaultRoute();
+        state.route = next;
+        const targetHash = `#${next}`;
+        if (replace) {
+          history.replaceState(null, "", targetHash);
+        } else if (window.location.hash !== targetHash) {
+          window.location.hash = next;
+        }
+        renderApp();
+      }
+
+      function syncRouteFromLocation({ replace = false } = {}) {
+        const route = routeFromHash() || defaultRoute();
+        state.route = route;
+        if (!routeFromHash()) {
+          const method = replace ? "replaceState" : "pushState";
+          history[method](null, "", `#${route}`);
+        }
+        renderApp();
+      }
+
+      function getConfig(type, name) {
+        return state.configs[type].find((item) => item.name === name) || null;
+      }
+
+      function getProvider() {
+        return nodes.provider.value || "configured";
+      }
+
+      function getLocalModel(value) {
+        return state.localModels.find((item) => item.value === value) || null;
+      }
+
+      function getTemplateConfig() {
+        return getConfig("model_configs", nodes.modelTemplate.value.trim());
+      }
+
+      function renderFactChips(items) {
+        return items
+          .filter(Boolean)
+          .map((item) => `<span class="meta-pill">${escapeHtml(item)}</span>`)
+          .join("");
+      }
+
+      function renderModelSelectionOptions() {
+        const provider = getProvider();
+        const isLocal = provider === "local";
+        const options = isLocal
+          ? state.localModels.map((item) => ({
+              value: item.value,
+              label: item.label,
+            }))
+          : state.configs.model_configs.map((item) => ({
+              value: item.name,
+              label: `${item.model_id || item.name}${item.litellm_model_name ? ` · ${item.litellm_model_name}` : ""}`,
+            }));
+
+        nodes.modelSelectionOptions.innerHTML = options
+          .map((item) => `<option value="${escapeHtml(item.value)}" label="${escapeHtml(item.label)}"></option>`)
+          .join("");
+
+        if (!isLocal) {
+          nodes.modelSelectionLabel.textContent = "Configured Model";
+          nodes.modelSelection.placeholder = "Start typing a configured model...";
+          nodes.modelTemplateWrap.hidden = true;
+          if (!getConfig("model_configs", nodes.modelSelection.value)) {
+            nodes.modelSelection.value = state.configs.model_configs[0]?.name || "";
+          }
+          return;
+        }
+
+        nodes.modelSelectionLabel.textContent = "Local Model";
+        nodes.modelSelection.placeholder = "Start typing a local LM Studio model...";
+        nodes.modelTemplateWrap.hidden = false;
+        if (!getLocalModel(nodes.modelSelection.value)) {
+          nodes.modelSelection.value = "";
+        }
+      }
+
+      async function loadLocalModels({ force = false } = {}) {
+        if (state.localModelsLoaded && !force) {
+          return;
+        }
+
+        const templateName = nodes.modelTemplate.value.trim();
+        state.localModelsError = null;
+
+        try {
+          const endpoint = templateName
+            ? `/api/providers/local/models?model_config_name=${encodeURIComponent(templateName)}`
+            : "/api/providers/local/models";
+          const response = await fetch(endpoint);
+          if (!response.ok) {
+            throw new Error("Failed to discover local models.");
+          }
+          state.localModels = await response.json();
+          state.localModelsLoaded = true;
+        } catch (error) {
+          state.localModels = [];
+          state.localModelsLoaded = true;
+          state.localModelsError = error.message || "Failed to discover local models.";
+        }
+      }
+
+      function renderConfigPreview() {
+        const provider = getProvider();
+        const isLocal = provider === "local";
+        const model = isLocal ? getTemplateConfig() : getConfig("model_configs", nodes.modelSelection.value);
+        const localModel = isLocal ? getLocalModel(nodes.modelSelection.value.trim()) : null;
+        const benchmark = getConfig("benchmark_configs", nodes.benchmarkConfig.value);
+
+        if (!isLocal) {
+          nodes.modelSelectionNote.textContent = model
+            ? `${model.model_id || "No model ID"}${model.context_length ? ` with context ${model.context_length}` : ""}`
+            : "No configured model details loaded.";
+          nodes.modelSelectionMeta.innerHTML = model
+            ? renderFactChips([
+                model.identifier ? `identifier ${model.identifier}` : null,
+                model.litellm_model_name ? `route ${model.litellm_model_name}` : null,
+                model.parallel ? `parallel ${model.parallel}` : null,
+              ])
+            : "";
+        } else if (localModel) {
+          nodes.modelSelectionNote.textContent = `${localModel.label}${localModel.context_length ? ` · ctx ${localModel.context_length}` : ""}`;
+          nodes.modelSelectionMeta.innerHTML = renderFactChips([
+            localModel.source ? `source ${localModel.source}` : null,
+            localModel.model_key ? `key ${localModel.model_key}` : null,
+            model?.parallel ? `template parallel ${model.parallel}` : null,
+          ]);
+        } else if (state.localModelsError) {
+          nodes.modelSelectionNote.textContent = `${state.localModelsError} Type a local model key manually if needed.`;
+          nodes.modelSelectionMeta.innerHTML = model
+            ? renderFactChips([model.parallel ? `template parallel ${model.parallel}` : null, model.context_length ? `template ctx ${model.context_length}` : null])
+            : "";
+        } else if (state.localModelsLoaded) {
+          nodes.modelSelectionNote.textContent = state.localModels.length
+            ? "Select a local model or keep typing to filter installed LM Studio models."
+            : "No local LM Studio models were discovered. Type a local model key manually if needed.";
+          nodes.modelSelectionMeta.innerHTML = model
+            ? renderFactChips([model.parallel ? `template parallel ${model.parallel}` : null, model.context_length ? `template ctx ${model.context_length}` : null])
+            : "";
+        } else {
+          nodes.modelSelectionNote.textContent = "Discovering local LM Studio models...";
+          nodes.modelSelectionMeta.innerHTML = "";
+        }
+
+        nodes.benchmarkConfigNote.textContent = benchmark
+          ? `${benchmark.task_name || "Benchmark task"}${benchmark.limit ? ` with default limit ${benchmark.limit}` : ""}`
+          : "No benchmark details loaded.";
+        nodes.benchmarkConfigMeta.innerHTML = benchmark
+          ? renderFactChips([
+              benchmark.task_name ? `task ${benchmark.task_name}` : null,
+              benchmark.concurrent_requests ? `concurrency ${benchmark.concurrent_requests}` : null,
+              benchmark.limit ? `default limit ${benchmark.limit}` : "uses full benchmark",
+            ])
+          : "";
+
+        if (!isLocal) {
+          nodes.previewModelValue.textContent = model
+            ? `${model.model_id || model.name} via ${model.litellm_model_name || model.identifier || "default route"}`
+            : "Select a configured model to inspect the resolved route.";
+        } else {
+          nodes.previewModelValue.textContent = model
+            ? `${nodes.modelSelection.value.trim() || "Select local model"} via LM Studio using ${model.name} template defaults`
+            : "Select a local model and runtime template to inspect the launch route.";
+        }
+        nodes.previewBenchmarkValue.textContent = benchmark
+          ? `${benchmark.task_name || benchmark.name}${benchmark.limit ? ` with default limit ${benchmark.limit}` : ""}`
+          : "Select a benchmark config to inspect the task.";
+        nodes.previewModelCount.textContent = String(state.configs.model_configs.length);
+        nodes.previewLocalModelCount.textContent = String(state.localModels.length);
+        nodes.previewBenchmarkCount.textContent = String(state.configs.benchmark_configs.length);
+        nodes.previewRunCount.textContent = String(state.runs.length);
+        nodes.launchSummaryProvider.textContent = isLocal ? "Local (LM Studio)" : "Configured";
+        nodes.launchSummaryModel.textContent = isLocal
+          ? nodes.modelSelection.value.trim() || "No local model selected"
+          : model?.model_id || model?.name || "No model selected";
+        nodes.launchSummaryBenchmark.textContent = benchmark?.name || "No benchmark selected";
+        nodes.launchSummaryLimit.textContent = nodes.limit.value.trim() || String(benchmark?.limit ?? "Default benchmark limit");
+      }
+
+      function dashboardCounts() {
+        return {
+          total: state.runs.length,
+          active: state.runs.filter((run) => run.status === "running" || run.status === "queued").length,
+          finished: state.runs.filter((run) => run.status === "finished").length,
+          failed: state.runs.filter((run) => run.status === "failed").length,
+        };
+      }
+
+      function renderDashboardLatest() {
+        const latest = state.runs[0];
+        if (!latest) {
+          nodes.dashboardLatest.innerHTML = `
+            <div class="hero-summary">
+              <div class="summary-header">
+                <div>
+                  <p class="eyebrow">Latest run</p>
+                  <h3 class="hero-headline">No runs tracked yet</h3>
+                </div>
+                <span class="status-pill" data-tone="idle"><span class="status-dot"></span>Idle</span>
+              </div>
+              <p class="hero-copy">Start an evaluation to make the latest run summary and history available.</p>
+              <div class="button-row">
+                <button class="button button-primary" type="button" data-route-action="launchpad">Start evaluation</button>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        const progress = formatProgress(latest);
+        nodes.dashboardLatest.innerHTML = `
+          <div class="hero-summary">
+            <div class="summary-header">
+              <div>
+                <p class="eyebrow">Latest run</p>
+                <h3 class="hero-headline">${escapeHtml(latest.model_id || latest.model_config_name || "Model not set")}</h3>
+                <p class="hero-copy">${escapeHtml(latest.benchmark_config_name || "-")} · updated ${escapeHtml(formatDate(latest.updated_at))}</p>
+              </div>
+              <span class="status-pill" data-tone="${escapeHtml(statusTone(latest.status))}">
+                <span class="status-dot" aria-hidden="true"></span>${escapeHtml(humanStatus(latest.status))}
+              </span>
+            </div>
+            <div class="button-row">
+              <button class="button button-primary" type="button" data-run-action="monitoring" data-run-id="${escapeHtml(latest.run_id)}">Open monitoring</button>
+              <button class="button" type="button" data-run-action="results" data-run-id="${escapeHtml(latest.run_id)}">Open results</button>
+            </div>
+          </div>
+          <div class="meta-strip">
+            <div class="meta-block">
+              <span class="meta-label">Run ID</span>
+              <div class="meta-value">${escapeHtml(latest.run_id)}</div>
+            </div>
+            <div class="meta-block">
+              <span class="meta-label">Identifier</span>
+              <div class="meta-value">${escapeHtml(latest.identifier || "-")}</div>
+            </div>
+            <div class="meta-block">
+              <span class="meta-label">Score</span>
+              <div class="meta-value">${escapeHtml(latest.score_metric || "score")} · ${escapeHtml(formatScore(latest.score))}</div>
+            </div>
+            <div class="meta-block">
+              <span class="meta-label">Progress</span>
+              <div class="meta-value">${escapeHtml(`${progress.completed} / ${progress.total} · ${progress.percent}%`)}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderDashboardTable() {
+        if (!state.runs.length) {
+          nodes.dashboardRunsTable.innerHTML = "";
+          nodes.dashboardRunsEmpty.hidden = false;
+          return;
+        }
+
+        nodes.dashboardRunsEmpty.hidden = true;
+        nodes.dashboardRunsTable.innerHTML = state.runs
+          .map((run) => {
+            return `
+              <tr>
+                <td data-label="Model">
+                  <span class="table-primary">${escapeHtml(run.model_id || run.model_config_name || "-")}</span>
+                  <span class="table-secondary">Run ${escapeHtml(run.run_id)}</span>
+                </td>
+                <td data-label="Benchmark">
+                  <span class="table-primary">${escapeHtml(run.benchmark_config_name || "-")}</span>
+                  <span class="table-secondary">${escapeHtml(run.model_config_name || "-")}</span>
+                </td>
+                <td data-label="Status"><span class="status-pill" data-tone="${escapeHtml(statusTone(run.status))}"><span class="status-dot"></span>${escapeHtml(humanStatus(run.status))}</span></td>
+                <td data-label="Score">
+                  <span class="table-primary">${escapeHtml(formatScore(run.score))}</span>
+                  <span class="table-secondary">${escapeHtml(run.score_metric || "Primary metric")}</span>
+                </td>
+                <td data-label="Updated">
+                  <span class="table-primary">${escapeHtml(formatDate(run.updated_at))}</span>
+                  <span class="table-secondary">${escapeHtml(run.identifier || "No identifier")}</span>
+                </td>
+                <td data-label="Actions">
+                  <div class="button-row">
+                    <button class="button" type="button" data-run-action="monitoring" data-run-id="${escapeHtml(run.run_id)}">Monitor</button>
+                    <button class="button" type="button" data-run-action="results" data-run-id="${escapeHtml(run.run_id)}">Results</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      function renderDashboard() {
+        const counts = dashboardCounts();
+        nodes.dashboardTotalRuns.textContent = String(counts.total);
+        nodes.dashboardActiveRuns.textContent = String(counts.active);
+        nodes.dashboardFinishedRuns.textContent = String(counts.finished);
+        nodes.dashboardFailedRuns.textContent = String(counts.failed);
+        renderDashboardLatest();
+        renderDashboardTable();
+      }
+
+      function monitoringNarrative(run) {
+        if (!run) {
+          return {
+            message: "Select a run from history or start a new evaluation.",
+            detail: "Monitoring subscribes to server-sent events only while this view is active.",
+            progress: "No run selected.",
+          };
+        }
+        if (run.status === "running") {
+          return {
+            message: "This run is actively streaming benchmark progress.",
+            detail: "Stay on Monitoring to keep progress, score, and sample completion counts current.",
+            progress: run.total_samples
+              ? `${run.completed_samples} of ${run.total_samples} samples completed.`
+              : "Run is active and preparing the workload.",
+          };
+        }
+        if (run.status === "finished") {
+          return {
+            message: "Final score is ready. Open Results to inspect sample-level misses.",
+            detail: "Monitoring now reflects the final persisted state for this completed run.",
+            progress: run.total_samples
+              ? `${run.completed_samples} of ${run.total_samples} samples completed.`
+              : "Run completed without a total sample count.",
+          };
+        }
+        if (run.status === "failed") {
+          return {
+            message: "The run terminated before benchmark completion.",
+            detail: "Review the persisted error message and inspect any completed samples in Results.",
+            progress: run.total_samples
+              ? `${run.completed_samples} of ${run.total_samples} samples completed before failure.`
+              : "The run failed before total work was established.",
+          };
+        }
+        return {
+          message: "The run is queued and waiting to begin.",
+          detail: "Monitoring will switch to live updates as soon as execution begins.",
+          progress: "Queued for execution.",
+        };
+      }
+
+      function renderMonitoringPanel() {
+        const run = getSelectedRun();
+        if (!run) {
+          nodes.monitoringRunPanel.innerHTML = `
+            <div class="hero-summary">
+              <div class="summary-header">
+                <div>
+                  <p class="eyebrow">Selected run</p>
+                  <h3 class="hero-headline">No run selected</h3>
+                </div>
+                <span class="status-pill" data-tone="idle"><span class="status-dot"></span>Idle</span>
+              </div>
+              <p class="hero-copy">Pick a run from history or start a new evaluation from Launchpad.</p>
+            </div>
+          `;
+          nodes.monitoringProgressFill.style.width = "0%";
+          nodes.monitoringProgressCopy.textContent = "No run selected.";
+          nodes.monitoringError.style.display = "none";
+          nodes.monitoringError.textContent = "";
+          return;
+        }
+
+        const narrative = monitoringNarrative(run);
+        const progress = formatProgress(run);
+
+        nodes.monitoringRunPanel.innerHTML = `
+          <div class="hero-summary">
+            <div class="summary-header">
+              <div>
+                <p class="eyebrow">Selected run</p>
+                <h3 class="hero-headline">${escapeHtml(run.model_id || run.model_config_name || "Model not set")}</h3>
+                <p class="hero-copy">${escapeHtml(narrative.message)}</p>
+              </div>
+              <div class="button-row">
+                <span class="status-pill" data-tone="${escapeHtml(statusTone(run.status))}">
+                  <span class="status-dot" aria-hidden="true"></span>${escapeHtml(humanStatus(run.status))}
+                </span>
+                <button class="button" type="button" data-run-action="results" data-run-id="${escapeHtml(run.run_id)}">Open results</button>
+                <button class="button" type="button" data-route-action="launchpad">Start new evaluation</button>
+              </div>
+            </div>
+          </div>
+          <div class="meta-strip">
+            <div class="meta-block">
+              <span class="meta-label">Run ID</span>
+              <div class="meta-value">${escapeHtml(run.run_id)}</div>
+            </div>
+            <div class="meta-block">
+              <span class="meta-label">Benchmark</span>
+              <div class="meta-value">${escapeHtml(run.benchmark_config_name || "-")}</div>
+            </div>
+            <div class="meta-block">
+              <span class="meta-label">Identifier</span>
+              <div class="meta-value">${escapeHtml(run.identifier || "-")}</div>
+            </div>
+            <div class="meta-block">
+              <span class="meta-label">LiteLLM route</span>
+              <div class="meta-value">${escapeHtml(run.litellm_model_name || "-")}</div>
+            </div>
+          </div>
+          <div class="metric-grid">
+            <article class="metric-card">
+              <span class="metric-label">Score</span>
+              <p class="metric-value">${escapeHtml(formatScore(run.score))}</p>
+              <p class="metric-note">${escapeHtml(run.score_metric || "Primary metric from the benchmark tracker.")}</p>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Progress</span>
+              <p class="metric-value">${escapeHtml(`${progress.completed} / ${progress.total}`)}</p>
+              <p class="metric-note">${escapeHtml(progress.percent)}% of the current workload.</p>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Updated</span>
+              <p class="metric-value">${escapeHtml(formatDate(run.updated_at))}</p>
+              <p class="metric-note">Last persisted update from the run manager.</p>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Limit</span>
+              <p class="metric-value">${escapeHtml(String(run.limit ?? "Full"))}</p>
+              <p class="metric-note">${escapeHtml(narrative.detail)}</p>
+            </article>
+          </div>
+        `;
+
+        nodes.monitoringProgressFill.style.width = `${progress.percent}%`;
+        nodes.monitoringProgressCopy.textContent = narrative.progress;
+
+        if (run.error_message) {
+          nodes.monitoringError.style.display = "block";
+          nodes.monitoringError.textContent = run.error_message;
+        } else {
+          nodes.monitoringError.style.display = "none";
+          nodes.monitoringError.textContent = "";
+        }
+      }
+
+      function renderMonitoringHistory() {
+        nodes.monitoringHistorySummary.textContent = `${state.runs.length} run${state.runs.length === 1 ? "" : "s"}`;
+        if (!state.runs.length) {
+          nodes.monitoringHistory.innerHTML = "";
+          nodes.monitoringHistoryEmpty.hidden = false;
+          return;
+        }
+
+        nodes.monitoringHistoryEmpty.hidden = true;
+        nodes.monitoringHistory.innerHTML = state.runs
+          .map((run) => {
+            const progress = formatProgress(run);
+            return `
+              <button
+                class="history-item${run.run_id === state.selectedRunId ? " is-active" : ""}"
+                type="button"
+                data-history-run="${escapeHtml(run.run_id)}"
+              >
+                <div class="history-top">
+                  <span class="table-primary">${escapeHtml(run.model_id || run.model_config_name || "-")}</span>
+                  <span class="history-caption">${escapeHtml(formatDate(run.updated_at))}</span>
+                </div>
+                <div class="history-primary">
+                  <span class="history-id">${escapeHtml(run.benchmark_config_name || "-")}</span>
+                  <span class="history-caption">Run ${escapeHtml(run.run_id)} · ${escapeHtml(humanStatus(run.status))}</span>
+                </div>
+                <div class="history-mini-bar"><div style="width: ${progress.percent}%"></div></div>
+                <div class="history-bottom">
+                  <span class="history-caption">${escapeHtml(`${progress.completed} / ${progress.total} complete`)}</span>
+                  <span class="status-pill" data-tone="${escapeHtml(statusTone(run.status))}">
+                    <span class="status-dot"></span>${escapeHtml(humanStatus(run.status))}
+                  </span>
+                </div>
+              </button>
+            `;
+          })
+          .join("");
+      }
+
+      function renderResults() {
+        const run = getSelectedRun();
+        const filtered = getFilteredSamples();
+        const allSamples = getSelectedRunSamples();
+        const passCount = allSamples.filter((sample) => sample.success === true).length;
+        const failCount = allSamples.filter((sample) => sample.success === false).length;
+
+        ensureSelectedSample();
+        const selectedSample = filtered.find((sample) => sample.sample_id === state.selectedSampleId) || null;
+
+        nodes.resultsRunChip.textContent = run ? run.run_id : "No run selected";
+        nodes.resultsSummaryChip.textContent = allSamples.length
+          ? `${allSamples.length} samples · ${passCount} pass · ${failCount} fail`
+          : "0 samples";
+
+        Array.from(nodes.resultsFilters.querySelectorAll(".filter-button")).forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.filter === state.sampleFilter);
+        });
+
+        if (!run || !allSamples.length) {
+          nodes.resultsSampleList.innerHTML = "";
+          nodes.resultsEmpty.hidden = false;
+          nodes.resultsDetail.innerHTML = `
+            <div class="sample-head">
+              <p class="eyebrow">Inspector</p>
+              <h3 class="sample-title">No sample selected</h3>
+              <p class="panel-copy">Run a benchmark or choose a run with completed samples to populate the inspector.</p>
+            </div>
+          `;
+          return;
+        }
+
+        nodes.resultsEmpty.hidden = filtered.length > 0;
+        nodes.resultsSampleList.innerHTML = filtered
+          .map((sample) => {
+            const parsed = sample.parsed_response || "-";
+            const expected = sample.expected_response || "-";
+            return `
+              <button
+                class="sample-row${sample.sample_id === state.selectedSampleId ? " is-active" : ""}"
+                type="button"
+                data-sample-id="${escapeHtml(sample.sample_id)}"
+              >
+                <div class="sample-row-top">
+                  <span class="technical-label">Sample ${escapeHtml(sample.sample_index + 1)}</span>
+                  ${statusChip(sample.success)}
+                </div>
+                <div class="sample-row-title">${escapeHtml(extractQuestionPreview(sample.raw_prompt))}</div>
+                <div class="sample-row-copy">Parsed ${escapeHtml(parsed)} · Expected ${escapeHtml(expected)}</div>
+                <div class="sample-row-copy">Completed ${escapeHtml(formatDate(sample.completed_at))}</div>
+              </button>
+            `;
+          })
+          .join("");
+
+        if (!filtered.length) {
+          nodes.resultsDetail.innerHTML = `
+            <div class="sample-head">
+              <p class="eyebrow">Inspector</p>
+              <h3 class="sample-title">No samples match this filter</h3>
+              <p class="panel-copy">Switch filters to restore a selectable sample list.</p>
+            </div>
+          `;
+          return;
+        }
+
+        const metrics = Object.entries(selectedSample.metrics || {});
+        nodes.resultsDetail.innerHTML = `
+          <div class="sample-head">
+            <p class="eyebrow">Inspector</p>
+            <h3 class="sample-title">Sample ${escapeHtml(selectedSample.sample_index + 1)}</h3>
+            <p class="sample-question">${escapeHtml(extractQuestionPreview(selectedSample.raw_prompt))}</p>
+            <div class="sample-meta">
+              <span class="meta-pill">${escapeHtml(run.benchmark_config_name || "Benchmark not set")}</span>
+              <span class="meta-pill">Run ${escapeHtml(run.run_id)}</span>
+              <span class="meta-pill">ID ${escapeHtml(selectedSample.sample_id)}</span>
+              ${statusChip(selectedSample.success)}
+            </div>
+          </div>
+
+          <div class="result-overview">
+            <div class="result-card">
+              <span class="summary-label">Outcome</span>
+              <div class="summary-value">${selectedSample.success === true ? "Pass" : selectedSample.success === false ? "Fail" : "Pending"}</div>
+              <p class="result-note">Primary sample status based on parsed and expected output.</p>
+            </div>
+            <div class="result-card">
+              <span class="summary-label">Primary metric</span>
+              <div class="summary-value">${metrics.length ? escapeHtml(`${metrics[0][0]} · ${formatMetricValue(metrics[0][1])}`) : "No metric reported"}</div>
+              <p class="result-note">Reported sample metric from the benchmark tracker.</p>
+            </div>
+          </div>
+
+          <div class="sample-section-grid">
+            <div class="payload-card">
+              <span class="payload-title">Parsed response</span>
+              <pre class="payload-content">${escapeHtml(selectedSample.parsed_response || "-")}</pre>
+            </div>
+            <div class="payload-card">
+              <span class="payload-title">Expected response</span>
+              <pre class="payload-content">${escapeHtml(selectedSample.expected_response || "-")}</pre>
+            </div>
+          </div>
+
+          <div class="payload-card">
+            <span class="payload-title">Metrics</span>
+            <div class="metrics-wrap">
+              ${
+                metrics.length
+                  ? metrics
+                      .map(([key, value]) => {
+                        const display = formatMetricValue(value);
+                        return `<span class="metric-pill">${escapeHtml(key)}: ${escapeHtml(display)}</span>`;
+                      })
+                      .join("")
+                  : '<span class="metric-pill">No sample metrics reported</span>'
+              }
+            </div>
+          </div>
+
+          <details>
+            <summary>Show raw prompt</summary>
+            <div class="advanced-body">
+              <pre class="payload-content">${escapeHtml(selectedSample.raw_prompt || "-")}</pre>
+            </div>
+          </details>
+
+          <details>
+            <summary>Show raw response</summary>
+            <div class="advanced-body">
+              <pre class="payload-content">${escapeHtml(selectedSample.raw_response || "-")}</pre>
+            </div>
+          </details>
+        `;
+      }
+
+      function renderRoute() {
+        nodes.views.forEach((view) => {
+          view.classList.toggle("is-active", view.dataset.view === state.route);
+        });
+
+        nodes.navLinks.forEach((link) => {
+          const active = link.dataset.route === state.route;
+          link.classList.toggle("is-active", active);
+          if (active) {
+            link.setAttribute("aria-current", "page");
+          } else {
+            link.removeAttribute("aria-current");
+          }
+        });
+
+        const selectedRun = getSelectedRun();
+        const contextByRoute = {
+          dashboard: state.runs.length
+            ? `${state.runs.length} runs tracked · latest ${state.runs[0].model_id || state.runs[0].run_id}`
+            : "No runs tracked yet",
+          launchpad: "Configure the next evaluation job",
+          monitoring: selectedRun ? `Selected run ${selectedRun.model_id || selectedRun.run_id}` : "No run selected",
+          results: selectedRun ? `Inspecting ${selectedRun.model_id || selectedRun.run_id}` : "No run selected",
+        };
+
+        nodes.routeTitle.textContent = routeLabel(state.route);
+        nodes.topbarContext.textContent = contextByRoute[state.route];
+      }
+
+      function renderTopbarStatus() {
+        const counts = dashboardCounts();
+        nodes.topbarStatusText.textContent = `${counts.total} runs tracked · ${counts.active} active`;
+      }
+
+      function renderApp() {
+        renderRoute();
+        renderTopbarStatus();
+        renderDashboard();
+        renderConfigPreview();
+        renderMonitoringPanel();
+        renderMonitoringHistory();
+        renderResults();
+        manageEventStream();
+      }
+
+      function disconnectEvents() {
+        if (state.eventSource) {
+          state.eventSource.close();
+        }
+        state.eventSource = null;
+        state.activeEventRunId = null;
+      }
+
+      function manageEventStream() {
+        const run = getSelectedRun();
+        if (state.route !== "monitoring" || !run) {
+          disconnectEvents();
+          return;
+        }
+
+        if (state.activeEventRunId === run.run_id && state.eventSource) {
+          return;
+        }
+
+        disconnectEvents();
+        const source = new EventSource(`/api/runs/${run.run_id}/events`);
+        source.addEventListener("run_started", handleRunEvent);
+        source.addEventListener("progress", handleRunEvent);
+        source.addEventListener("sample_completed", handleSampleEvent);
+        source.addEventListener("run_finished", handleRunEvent);
+        source.addEventListener("run_failed", handleRunEvent);
+        state.eventSource = source;
+        state.activeEventRunId = run.run_id;
+      }
+
+      function handleRunEvent(event) {
+        const payload = JSON.parse(event.data);
+        const run = payload.data;
+        updateRunInState(run);
+        renderApp();
+        if (payload.type === "run_finished" || payload.type === "run_failed" || run.status === "finished" || run.status === "failed") {
+          disconnectEvents();
+        }
+      }
+
+      function handleSampleEvent(event) {
+        const payload = JSON.parse(event.data);
+        if (!state.samplesByRun[payload.run_id]) {
+          state.samplesByRun[payload.run_id] = [];
+        }
+        state.samplesLoadedByRun[payload.run_id] = true;
+        const sample = payload.data;
+        const existingIndex = state.samplesByRun[payload.run_id].findIndex((item) => item.sample_id === sample.sample_id);
+        if (existingIndex >= 0) {
+          state.samplesByRun[payload.run_id][existingIndex] = sample;
+        } else {
+          state.samplesByRun[payload.run_id].push(sample);
+        }
+        if (payload.run_id === state.selectedRunId && !state.selectedSampleId) {
+          state.selectedSampleId = sample.sample_id;
+        }
+        renderApp();
+      }
+
+      async function loadConfigs() {
+        const response = await fetch("/api/configs");
+        state.configs = await response.json();
+
+        nodes.modelTemplate.innerHTML = "";
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Select runtime template...";
+        nodes.modelTemplate.appendChild(placeholder);
+        state.configs.model_configs.forEach((item) => {
+          const option = document.createElement("option");
+          option.value = item.name;
+          option.textContent = item.name;
+          nodes.modelTemplate.appendChild(option);
+        });
+        nodes.modelTemplate.value = "";
+        nodes.modelSelection.value = state.configs.model_configs[0]?.name || "";
+
+        nodes.benchmarkConfig.innerHTML = "";
+        state.configs.benchmark_configs.forEach((item) => {
+          const option = document.createElement("option");
+          option.value = item.name;
+          option.textContent = item.name;
+          nodes.benchmarkConfig.appendChild(option);
+        });
+        nodes.benchmarkConfig.value = state.configs.benchmark_configs[0]?.name || "";
+
+        renderModelSelectionOptions();
+      }
+
+      async function ensureRunLoaded(runId, { force = false } = {}) {
+        if (!runId) return;
+
+        const needsRun = force || !state.runDetails[runId];
+        const needsSamples = force || !state.samplesLoadedByRun[runId];
+        if (!needsRun && !needsSamples) {
+          ensureSelectedSample();
+          return;
+        }
+
+        const requests = [];
+        if (needsRun) {
+          requests.push(fetch(`/api/runs/${runId}`));
+        } else {
+          requests.push(Promise.resolve(null));
+        }
+        if (needsSamples) {
+          requests.push(fetch(`/api/runs/${runId}/samples`));
+        } else {
+          requests.push(Promise.resolve(null));
+        }
+
+        const [runResponse, samplesResponse] = await Promise.all(requests);
+
+        if (runResponse) {
+          const run = await runResponse.json();
+          updateRunInState(run);
+        }
+        if (samplesResponse) {
+          state.samplesByRun[runId] = await samplesResponse.json();
+          state.samplesLoadedByRun[runId] = true;
+        }
+
+        ensureSelectedSample();
+      }
+
+      async function loadRuns({ preserveSelection = true, forceSelected = false } = {}) {
+        const response = await fetch("/api/runs");
+        state.runs = await response.json();
+        state.runs.forEach((run) => {
+          if (!state.runDetails[run.run_id]) {
+            state.runDetails[run.run_id] = run;
+          } else {
+            state.runDetails[run.run_id] = { ...state.runDetails[run.run_id], ...run };
+          }
+        });
+
+        if (!state.runs.length) {
+          state.selectedRunId = null;
+          state.selectedSampleId = null;
+          disconnectEvents();
+          renderApp();
+          return;
+        }
+
+        const selectionStillExists = preserveSelection && state.runs.some((run) => run.run_id === state.selectedRunId);
+        if (!selectionStillExists) {
+          state.selectedRunId = state.runs[0].run_id;
+          state.selectedSampleId = null;
+        }
+
+        await ensureRunLoaded(state.selectedRunId, { force: forceSelected });
+        renderApp();
+      }
+
+      async function selectRun(runId, { route = null, force = false } = {}) {
+        if (!runId) return;
+        state.selectedRunId = runId;
+        state.selectedSampleId = null;
+        await ensureRunLoaded(runId, { force });
+        if (route) {
+          setRoute(route);
+          return;
+        }
+        renderApp();
+      }
+
+      function setFeedback(message, tone = "neutral") {
+        if (!message) {
+          nodes.formFeedback.textContent = "";
+          nodes.formFeedback.removeAttribute("data-tone");
+          return;
+        }
+        nodes.formFeedback.textContent = message;
+        nodes.formFeedback.dataset.tone = tone;
+      }
+
+      async function startRun(event) {
+        event.preventDefault();
+        setFeedback("");
+        nodes.startButton.disabled = true;
+
+        try {
+          const provider = getProvider();
+          const payload = {
+            benchmark_config_name: nodes.benchmarkConfig.value,
+          };
+
+          if (provider === "configured") {
+            const configuredModel = getConfig("model_configs", nodes.modelSelection.value.trim());
+            if (!configuredModel) {
+              throw new Error("Select a configured model from the list.");
+            }
+            payload.model_config_name = configuredModel.name;
+            if (nodes.modelId.value.trim()) payload.model_id = nodes.modelId.value.trim();
+          } else {
+            const template = getTemplateConfig();
+            const localModelValue = nodes.modelSelection.value.trim();
+            if (!template) {
+              throw new Error("Select a runtime template for the Local provider.");
+            }
+            if (!localModelValue) {
+              throw new Error("Select or type a local model for the Local provider.");
+            }
+            payload.model_config_name = template.name;
+            payload.model_id = localModelValue;
+          }
+
+          if (nodes.identifier.value.trim()) payload.identifier = nodes.identifier.value.trim();
+          if (nodes.litellmModelName.value.trim()) payload.litellm_model_name = nodes.litellmModelName.value.trim();
+          if (nodes.limit.value.trim()) payload.limit = Number(nodes.limit.value.trim());
+
+          const response = await fetch("/api/runs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.detail || "Failed to start run.");
+          }
+
+          updateRunInState(data);
+          state.samplesByRun[data.run_id] = [];
+          state.samplesLoadedByRun[data.run_id] = false;
+          state.selectedRunId = data.run_id;
+          state.selectedSampleId = null;
+          await loadRuns({ preserveSelection: true, forceSelected: true });
+          setFeedback(`Run ${data.run_id} dispatched. Monitoring is now active.`, "neutral");
+          setRoute("monitoring");
+        } catch (error) {
+          setFeedback(error.message || "Failed to start run.", "error");
+        } finally {
+          nodes.startButton.disabled = false;
+        }
+      }
+
+      async function handleProviderChange() {
+        if (getProvider() === "local") {
+          await loadLocalModels();
+        }
+        renderModelSelectionOptions();
+        renderApp();
+      }
+
+      async function handleTemplateChange() {
+        if (getProvider() === "local") {
+          state.localModelsLoaded = false;
+          await loadLocalModels({ force: true });
+        }
+        renderModelSelectionOptions();
+        renderApp();
+      }
+
+      async function refreshSelectedRun() {
+        if (!state.selectedRunId) {
+          return;
+        }
+        await ensureRunLoaded(state.selectedRunId, { force: true });
+        renderApp();
+      }
+
+      function handleDashboardActions(event) {
+        const routeAction = event.target.closest("[data-route-action]");
+        if (routeAction) {
+          setRoute(routeAction.dataset.routeAction);
+          return;
+        }
+
+        const runAction = event.target.closest("[data-run-action]");
+        if (runAction) {
+          selectRun(runAction.dataset.runId, { route: runAction.dataset.runAction });
+        }
+      }
+
+      function handleMonitoringHistory(event) {
+        const trigger = event.target.closest("[data-history-run]");
+        if (!trigger) return;
+        selectRun(trigger.dataset.historyRun);
+      }
+
+      function handleResultsFilters(event) {
+        const button = event.target.closest("[data-filter]");
+        if (!button) return;
+        state.sampleFilter = button.dataset.filter;
+        ensureSelectedSample();
+        renderResults();
+      }
+
+      function handleResultsSampleList(event) {
+        const button = event.target.closest("[data-sample-id]");
+        if (!button) return;
+        state.selectedSampleId = button.dataset.sampleId;
+        renderResults();
+      }
+
+      function bindEvents() {
+        window.addEventListener("hashchange", () => syncRouteFromLocation({ replace: true }));
+
+        nodes.provider.addEventListener("change", () => {
+          handleProviderChange().catch((error) => setFeedback(error.message || "Failed to update provider.", "error"));
+        });
+        nodes.modelSelection.addEventListener("input", renderConfigPreview);
+        nodes.modelTemplate.addEventListener("change", () => {
+          handleTemplateChange().catch((error) => setFeedback(error.message || "Failed to refresh local models.", "error"));
+        });
+        nodes.benchmarkConfig.addEventListener("change", renderConfigPreview);
+        nodes.limit.addEventListener("input", renderConfigPreview);
+        nodes.runForm.addEventListener("submit", startRun);
+
+        nodes.topbarRefresh.addEventListener("click", async () => {
+          await loadRuns({ preserveSelection: true, forceSelected: true });
+        });
+        nodes.dashboardOpenLaunchpad.addEventListener("click", () => setRoute("launchpad"));
+        nodes.launchpadOpenMonitoring.addEventListener("click", async () => {
+          if (!state.selectedRunId && state.runs[0]) {
+            await selectRun(state.runs[0].run_id);
+          }
+          setRoute("monitoring");
+        });
+        nodes.monitoringRefresh.addEventListener("click", refreshSelectedRun);
+        nodes.monitoringOpenResults.addEventListener("click", () => setRoute("results"));
+
+        nodes.dashboardLatest.addEventListener("click", handleDashboardActions);
+        nodes.dashboardRunsTable.addEventListener("click", handleDashboardActions);
+        nodes.monitoringRunPanel.addEventListener("click", handleDashboardActions);
+        nodes.monitoringHistory.addEventListener("click", handleMonitoringHistory);
+        nodes.resultsFilters.addEventListener("click", handleResultsFilters);
+        nodes.resultsSampleList.addEventListener("click", handleResultsSampleList);
+      }
+
+      async function initialize() {
+        bindEvents();
+        await loadConfigs();
+        await loadRuns({ preserveSelection: false });
+        syncRouteFromLocation({ replace: true });
+      }
+
+      initialize().catch((error) => {
+        setFeedback(error.message || "Failed to initialize the web UI.", "error");
+      });
+    </script>
+  </body>
+</html>
