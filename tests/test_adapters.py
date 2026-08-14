@@ -39,4 +39,3 @@ def test_generic_adapter_uses_raw_values():
     assert parsed == "model output"
     assert expected == "expected text"
     assert success is False
-

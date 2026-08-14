@@ -1,0 +1,9 @@
+benchmark:
+  name: gsm8k_reasoning
+  task_name: gsm8k|5
+  lighteval:
+    concurrent_requests: 8
+    max_gen_toks: 512
+    system_prompt: |-
+      Solve the math problem carefully.
+      Show the intermediate reasoning steps.

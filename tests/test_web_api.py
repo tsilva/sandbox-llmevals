@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import threading
 import time
 from pathlib import Path
@@ -9,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from llmevals.web.app import create_app
 from llmevals.web.manager import RunManager
-from llmevals.web.schemas import RunEvent, RunStartRequest, SampleResult
+from llmevals.web.schemas import RunEvent, SampleResult
 from llmevals.web.store import RunStore, utc_now
 
 
@@ -36,7 +35,11 @@ class StreamingFakeRunner:
                 completed_at=utc_now(),
             )
             store.append_sample(run_id, sample)
-            publish(RunEvent(type="sample_completed", run_id=run_id, data=sample.model_dump(mode="json")))
+            publish(
+                RunEvent(
+                    type="sample_completed", run_id=run_id, data=sample.model_dump(mode="json")
+                )
+            )
             detail = store.update_run(
                 run_id,
                 completed_samples=index + 1,
@@ -81,7 +84,9 @@ class BlockingFakeRunner:
             completed_at=utc_now(),
         )
         store.append_sample(run_id, sample)
-        publish(RunEvent(type="sample_completed", run_id=run_id, data=sample.model_dump(mode="json")))
+        publish(
+            RunEvent(type="sample_completed", run_id=run_id, data=sample.model_dump(mode="json"))
+        )
         results_path = store.write_results(run_id, {"results": {"all": {"accuracy": 1.0}}})
         detail = store.update_run(
             run_id,

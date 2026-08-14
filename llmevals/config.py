@@ -180,7 +180,9 @@ def resolve_settings(
         merged = _deep_merge(merged, overrides)
 
     lm_overrides = (overrides or {}).get("model", {}).get("lm_studio", {})
-    if ("port" in lm_overrides or "bind_address" in lm_overrides) and "base_url" not in lm_overrides:
+    if (
+        "port" in lm_overrides or "bind_address" in lm_overrides
+    ) and "base_url" not in lm_overrides:
         lm_studio = merged["model"]["lm_studio"]
         lm_studio["base_url"] = f"http://{lm_studio['bind_address']}:{lm_studio['port']}/v1"
 

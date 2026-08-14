@@ -45,7 +45,9 @@ class RunStore:
 
     def _write_json_atomic(self, path: Path, payload: dict[str, Any]) -> None:
         tmp_path = path.with_suffix(f"{path.suffix}.tmp")
-        tmp_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+        tmp_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False, default=str), encoding="utf-8"
+        )
         tmp_path.replace(path)
 
     def _build_run_id(self) -> str:
@@ -91,7 +93,9 @@ class RunStore:
     def save_run(self, detail: RunDetail) -> RunDetail:
         with self._lock:
             detail.updated_at = utc_now()
-            self._write_json_atomic(self._run_json_path(detail.run_id), detail.model_dump(mode="json"))
+            self._write_json_atomic(
+                self._run_json_path(detail.run_id), detail.model_dump(mode="json")
+            )
             return detail
 
     def update_run(self, run_id: str, **updates: Any) -> RunDetail:

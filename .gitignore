@@ -131,6 +131,8 @@ debug_*.json
 
 # Benchmark outputs
 benchmarks/
+!configs/benchmarks/
+!configs/benchmarks/*.yaml
 
 # Web UI runtime state
 web_runs/

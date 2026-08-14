@@ -5,7 +5,6 @@ import json
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 import time
 from copy import deepcopy
@@ -15,7 +14,13 @@ from typing import Any
 import yaml
 
 from .config import ROOT_DIR, resolve_settings, set_nested
-from .runtime import api_key_from_env, build_litellm_model_parameters, ensure_lm_studio, start_server, stop_server
+from .runtime import (
+    api_key_from_env,
+    build_litellm_model_parameters,
+    ensure_lm_studio,
+    start_server,
+    stop_server,
+)
 
 
 def env_str(name: str) -> str | None:
@@ -151,7 +156,8 @@ def execute_lighteval(
         "--no-sync",
         "python",
         "-m",
-        *build_lighteval_command(settings, model_config_path, extra_args),
+        "llmevals.lighteval_safe",
+        *build_lighteval_command(settings, model_config_path, extra_args)[1:],
     ]
 
     try:
@@ -165,6 +171,8 @@ def execute_lighteval(
         return completed.returncode
     finally:
         model_config_path.unlink(missing_ok=True)
+
+
 def latest_results_json(output_dir: Path) -> Path | None:
     candidates = sorted(output_dir.rglob("results_*.json"))
     return candidates[-1] if candidates else None
@@ -308,10 +316,13 @@ def command_benchmark_throughput(args: argparse.Namespace, extra_args: list[str]
         attempt_settings["benchmark"]["cache_dir"] = str(cache_dir)
         attempt_settings["benchmark"]["lighteval"]["concurrent_requests"] = attempt_concurrent
 
-        with stdout_log.open("w", encoding="utf-8") as stdout_handle, stderr_log.open(
-            "w",
-            encoding="utf-8",
-        ) as stderr_handle:
+        with (
+            stdout_log.open("w", encoding="utf-8") as stdout_handle,
+            stderr_log.open(
+                "w",
+                encoding="utf-8",
+            ) as stderr_handle,
+        ):
             started_at = time.monotonic()
             exit_code = execute_lighteval(
                 attempt_settings,
@@ -391,7 +402,9 @@ def command_benchmark_throughput(args: argparse.Namespace, extra_args: list[str]
 
 def add_shared_config_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--model", default=env_str("MODEL") or env_str("MODEL_CONFIG") or "default")
-    parser.add_argument("--benchmark", default=env_str("BENCHMARK") or env_str("BENCHMARK_CONFIG") or "gsm8k")
+    parser.add_argument(
+        "--benchmark", default=env_str("BENCHMARK") or env_str("BENCHMARK_CONFIG") or "gsm8k"
+    )
     parser.add_argument("--model-id", default=env_str("MODEL_ID"))
     parser.add_argument("--identifier", default=env_str("IDENTIFIER"))
     parser.add_argument("--litellm-model-name", default=env_str("LITELLM_MODEL_NAME"))
@@ -412,13 +425,17 @@ def add_shared_config_args(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Configurable helpers for LM Studio + lighteval workflows.")
+    parser = argparse.ArgumentParser(
+        description="Configurable helpers for LM Studio + lighteval workflows."
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     run_eval = subparsers.add_parser("run-eval", help="Run a single lighteval benchmark.")
     add_shared_config_args(run_eval)
 
-    benchmark = subparsers.add_parser("benchmark-throughput", help="Run a throughput benchmark with retry support.")
+    benchmark = subparsers.add_parser(
+        "benchmark-throughput", help="Run a throughput benchmark with retry support."
+    )
     add_shared_config_args(benchmark)
     benchmark.add_argument("--run-id", default=env_str("RUN_ID"))
     benchmark.add_argument("--run-id-template", default=env_str("RUN_ID_TEMPLATE"))
@@ -442,13 +459,19 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_false",
     )
 
-    start_server_parser = subparsers.add_parser("start-server", help="Start LM Studio and load a model.")
+    start_server_parser = subparsers.add_parser(
+        "start-server", help="Start LM Studio and load a model."
+    )
     add_shared_config_args(start_server_parser)
 
-    stop_server_parser = subparsers.add_parser("stop-server", help="Unload the current model and stop LM Studio.")
+    stop_server_parser = subparsers.add_parser(
+        "stop-server", help="Unload the current model and stop LM Studio."
+    )
     add_shared_config_args(stop_server_parser)
 
-    print_config = subparsers.add_parser("print-config", help="Resolve and print the active runtime config.")
+    print_config = subparsers.add_parser(
+        "print-config", help="Resolve and print the active runtime config."
+    )
     add_shared_config_args(print_config)
     print_config.add_argument("--format", choices=["yaml", "json"], default="yaml")
 

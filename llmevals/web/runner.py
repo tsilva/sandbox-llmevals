@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import traceback
-from collections import defaultdict
 from pathlib import Path
 from typing import Any, Callable
 
@@ -20,7 +19,7 @@ from llmevals.runtime import (
 )
 
 from .adapters import adapt_sample_result
-from .schemas import RunDetail, RunEvent, RunStartRequest, SampleResult
+from .schemas import RunEvent, RunStartRequest, SampleResult
 from .store import RunStore, utc_now
 
 
@@ -46,7 +45,9 @@ class LightevalWebRunner:
 
         api_key = api_key_from_env()
         ensure_lm_studio(model_cfg["lm_studio"]["base_url"], api_key)
-        store.write_log(run_id, "stdout", f"LM Studio ready at {model_cfg['lm_studio']['base_url']}")
+        store.write_log(
+            run_id, "stdout", f"LM Studio ready at {model_cfg['lm_studio']['base_url']}"
+        )
 
         evaluation_tracker = EvaluationTracker(
             output_dir=str(lighteval_dir),
@@ -69,7 +70,9 @@ class LightevalWebRunner:
             evaluation_tracker=evaluation_tracker,
             model_config=build_litellm_model_config(settings, api_key),
         )
-        store.write_log(run_id, "stdout", f"Initialized pipeline for task {benchmark_cfg['task_name']}")
+        store.write_log(
+            run_id, "stdout", f"Initialized pipeline for task {benchmark_cfg['task_name']}"
+        )
         pipeline.evaluation_tracker.general_config_logger.log_args_info(
             num_fewshot_seeds=pipeline.pipeline_parameters.num_fewshot_seeds,
             max_samples=pipeline.pipeline_parameters.max_samples,
@@ -124,7 +127,9 @@ class LightevalWebRunner:
             return None
         pipeline.evaluation_tracker.metrics_logger.metric_aggregated.clear()
         pipeline.evaluation_tracker.metrics_logger.aggregate(pipeline.tasks_dict, bootstrap_iters=0)
-        return pipeline.evaluation_tracker.metrics_logger.metric_aggregated.get("all", {}).get(primary_metric)
+        return pipeline.evaluation_tracker.metrics_logger.metric_aggregated.get("all", {}).get(
+            primary_metric
+        )
 
     def _official_results_path(self, run_id: str, store: RunStore) -> str | None:
         lighteval_dir = store.lighteval_dir(run_id)
@@ -173,8 +178,14 @@ class LightevalWebRunner:
                     completed_at=utc_now(),
                 )
                 store.append_sample(run_id, sample)
-                publish(RunEvent(type="sample_completed", run_id=run_id, data=sample.model_dump(mode="json")))
-                store.write_log(run_id, "stdout", f"Completed sample {sample_index + 1}/{len(docs)}")
+                publish(
+                    RunEvent(
+                        type="sample_completed", run_id=run_id, data=sample.model_dump(mode="json")
+                    )
+                )
+                store.write_log(
+                    run_id, "stdout", f"Completed sample {sample_index + 1}/{len(docs)}"
+                )
 
                 current_score = self._current_score(pipeline, primary_metric)
                 detail = store.update_run(
@@ -183,7 +194,9 @@ class LightevalWebRunner:
                     score=current_score,
                     score_metric=primary_metric,
                 )
-                publish(RunEvent(type="progress", run_id=run_id, data=detail.model_dump(mode="json")))
+                publish(
+                    RunEvent(type="progress", run_id=run_id, data=detail.model_dump(mode="json"))
+                )
 
             pipeline.evaluation_tracker.general_config_logger.log_end_time()
             pipeline.evaluation_tracker.metrics_logger.metric_aggregated.clear()
@@ -201,12 +214,16 @@ class LightevalWebRunner:
                 run_id,
                 status="finished",
                 completed_at=utc_now(),
-                score=final_results.get("results", {}).get("all", {}).get(primary_metric) if primary_metric else None,
+                score=final_results.get("results", {}).get("all", {}).get(primary_metric)
+                if primary_metric
+                else None,
                 score_metric=primary_metric,
                 results_path=results_path,
                 official_results_path=self._official_results_path(run_id, store),
             )
-            publish(RunEvent(type="run_finished", run_id=run_id, data=detail.model_dump(mode="json")))
+            publish(
+                RunEvent(type="run_finished", run_id=run_id, data=detail.model_dump(mode="json"))
+            )
         except Exception as exc:
             store.write_log(run_id, "stderr", traceback.format_exc())
             detail = store.update_run(

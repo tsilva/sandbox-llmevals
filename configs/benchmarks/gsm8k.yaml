@@ -1,0 +1,6 @@
+benchmark:
+  name: gsm8k
+  task_name: gsm8k|5
+  lighteval:
+    concurrent_requests: 8
+    max_gen_toks: 256
