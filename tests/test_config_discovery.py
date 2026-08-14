@@ -4,7 +4,11 @@ import json
 import subprocess
 
 from llmevals import runtime
-from llmevals.runtime import list_available_benchmark_configs, list_available_model_configs, list_discoverable_local_models
+from llmevals.runtime import (
+    list_available_benchmark_configs,
+    list_available_model_configs,
+    list_discoverable_local_models,
+)
 
 
 def test_lists_model_configs():

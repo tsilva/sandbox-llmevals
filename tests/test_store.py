@@ -42,4 +42,3 @@ def test_run_store_persists_run_and_samples(tmp_path: Path):
     assert reloaded.total_samples == 3
     assert len(samples) == 1
     assert samples[0].success is True
-

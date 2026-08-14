@@ -18,7 +18,7 @@ def build_markdown(parquet_path: Path, task_name: str) -> str:
     docs = task.eval_docs()
 
     lines: list[str] = []
-    lines.append(f"# Task Dump")
+    lines.append("# Task Dump")
     lines.append("")
     lines.append(f"- Parquet: `{parquet_path}`")
     lines.append(f"- Task: `{task_name}`")

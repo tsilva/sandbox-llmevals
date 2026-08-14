@@ -6,8 +6,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 
 from .manager import ActiveRunError, RunManager
-from .schemas import ConfigsResponse, DiscoveredModelOption, RunDetail, RunStartRequest, RunSummary, SampleResult
-
+from .schemas import (
+    ConfigsResponse,
+    DiscoveredModelOption,
+    RunDetail,
+    RunStartRequest,
+    RunSummary,
+    SampleResult,
+)
 
 INDEX_HTML = Path(__file__).with_name("index.html")
 

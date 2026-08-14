@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: 0.11.13
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: |
+          uv lock --check --no-config
+          uv sync --frozen --no-config
+
+      - name: Audit locked dependencies
+        run: >-
+          uv audit --locked --no-config
+          --ignore-until-fixed GHSA-w8v5-vhqr-4h9v
+
+      - name: Check formatting
+        run: uv run --no-config ruff format --check .
+
+      - name: Lint
+        run: uv run --no-config ruff check .
+
+      - name: Test
+        run: uv run --no-config pytest -q
+
+      - name: Smoke-test imports and CLI
+        run: |
+          uv run --no-config python -c "import lighteval, litellm, rouge_score"
+          uv run --no-config python -m llmevals.cli --help

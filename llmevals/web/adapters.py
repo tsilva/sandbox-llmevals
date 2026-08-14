@@ -35,4 +35,3 @@ def adapt_sample_result(
         return parsed_response, expected_response, success
 
     return raw_response, expected_raw, _generic_success(metrics)
-

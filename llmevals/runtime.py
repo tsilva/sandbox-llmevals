@@ -13,6 +13,9 @@ from lighteval.models.endpoints.litellm_model import LiteLLMModelConfig
 from lighteval.models.model_input import GenerationParameters
 
 from .config import list_config_paths, resolve_settings
+from .lighteval_cache import ensure_safe_litellm_cache
+
+ensure_safe_litellm_cache()
 
 GSM8K_STRICT_SYSTEM_PROMPT = """Output format rules:
 - Solve the problem and make sure the final answer is correct.
@@ -86,7 +89,12 @@ def start_server(
     gpu: str,
 ) -> None:
     stop_server(root_dir, identifier)
-    run_command(["lms", "server", "start", "--port", str(port), "--bind", bind_address], cwd=root_dir, check=True, quiet=True)
+    run_command(
+        ["lms", "server", "start", "--port", str(port), "--bind", bind_address],
+        cwd=root_dir,
+        check=True,
+        quiet=True,
+    )
     run_command(
         [
             "lms",
@@ -147,7 +155,9 @@ def build_litellm_model_parameters(settings: dict[str, Any], api_key: str | None
         "cache_dir": benchmark_cfg["cache_dir"],
         "generation_parameters": build_generation_parameters(settings),
     }
-    model_parameters = deep_merge(model_parameters, model_cfg.get("extra_lighteval_model_parameters", {}))
+    model_parameters = deep_merge(
+        model_parameters, model_cfg.get("extra_lighteval_model_parameters", {})
+    )
     model_parameters = deep_merge(model_parameters, lighteval_cfg.get("model_parameters", {}))
 
     system_prompt = build_system_prompt(settings)
@@ -178,7 +188,12 @@ def list_discoverable_local_models(model: str | None = None) -> list[dict[str, A
                 for item in payload:
                     if not isinstance(item, dict):
                         continue
-                    value = str(item.get("modelKey") or item.get("indexedModelIdentifier") or item.get("path") or "").strip()
+                    value = str(
+                        item.get("modelKey")
+                        or item.get("indexedModelIdentifier")
+                        or item.get("path")
+                        or ""
+                    ).strip()
                     if not value or value in seen:
                         continue
                     seen.add(value)

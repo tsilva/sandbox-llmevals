@@ -10,10 +10,23 @@ from pathlib import Path
 from typing import Any
 
 from llmevals.config import resolve_settings
-from llmevals.runtime import list_available_benchmark_configs, list_available_model_configs, list_discoverable_local_models
+from llmevals.runtime import (
+    list_available_benchmark_configs,
+    list_available_model_configs,
+    list_discoverable_local_models,
+)
 
 from .runner import LightevalWebRunner
-from .schemas import ConfigOption, ConfigsResponse, DiscoveredModelOption, RunDetail, RunEvent, RunStartRequest, RunSummary, SampleResult
+from .schemas import (
+    ConfigOption,
+    ConfigsResponse,
+    DiscoveredModelOption,
+    RunDetail,
+    RunEvent,
+    RunStartRequest,
+    RunSummary,
+    SampleResult,
+)
 from .store import RunStore, utc_now
 
 
@@ -56,8 +69,12 @@ class RunManager:
 
     def configs(self) -> ConfigsResponse:
         return ConfigsResponse(
-            model_configs=[ConfigOption.model_validate(item) for item in list_available_model_configs()],
-            benchmark_configs=[ConfigOption.model_validate(item) for item in list_available_benchmark_configs()],
+            model_configs=[
+                ConfigOption.model_validate(item) for item in list_available_model_configs()
+            ],
+            benchmark_configs=[
+                ConfigOption.model_validate(item) for item in list_available_benchmark_configs()
+            ],
         )
 
     def local_models(self, model_config_name: str | None = None) -> list[DiscoveredModelOption]:
@@ -80,7 +97,9 @@ class RunManager:
         process_alive = self._active_process is not None and self._active_process.is_alive()
         return thread_alive or process_alive
 
-    def _request_overrides(self, request: RunStartRequest, settings: dict[str, Any]) -> dict[str, Any]:
+    def _request_overrides(
+        self, request: RunStartRequest, settings: dict[str, Any]
+    ) -> dict[str, Any]:
         overrides: dict[str, Any] = {}
         if request.model_id:
             overrides.setdefault("model", {})["id"] = request.model_id
@@ -103,7 +122,9 @@ class RunManager:
         return overrides
 
     def _resolve_settings(self, request: RunStartRequest) -> dict[str, Any]:
-        base_settings = resolve_settings(model=request.model_config_name, benchmark=request.benchmark_config_name)
+        base_settings = resolve_settings(
+            model=request.model_config_name, benchmark=request.benchmark_config_name
+        )
         overrides = self._request_overrides(request, base_settings)
         if not overrides:
             return base_settings
@@ -154,7 +175,9 @@ class RunManager:
                     completed_at=utc_now(),
                     error_message="Benchmark process exited unexpectedly.",
                 )
-                self._publish(RunEvent(type="run_failed", run_id=run_id, data=detail.model_dump(mode="json")))
+                self._publish(
+                    RunEvent(type="run_failed", run_id=run_id, data=detail.model_dump(mode="json"))
+                )
 
         self._clear_active(run_id)
 
@@ -167,7 +190,11 @@ class RunManager:
             detail = self.store.create_run(request, settings)
 
             started = self.store.update_run(detail.run_id, status="running", started_at=utc_now())
-            self._publish(RunEvent(type="run_started", run_id=detail.run_id, data=started.model_dump(mode="json")))
+            self._publish(
+                RunEvent(
+                    type="run_started", run_id=detail.run_id, data=started.model_dump(mode="json")
+                )
+            )
 
             self._active_run_id = detail.run_id
             execution_mode = getattr(self.runner, "execution_mode", "thread")
@@ -207,7 +234,9 @@ class RunManager:
                 finally:
                     self._clear_active(detail.run_id)
 
-            thread = threading.Thread(target=target, name=f"benchmark-run-{detail.run_id}", daemon=True)
+            thread = threading.Thread(
+                target=target, name=f"benchmark-run-{detail.run_id}", daemon=True
+            )
             self._active_thread = thread
             thread.start()
             return started

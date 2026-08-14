@@ -13,4 +13,3 @@ def extract_final_number(text: str) -> str | None:
         return number_match[-1]
 
     return None
-

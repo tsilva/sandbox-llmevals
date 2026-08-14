@@ -4,7 +4,6 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-
 RunStatus = Literal["queued", "running", "finished", "failed"]
 RunEventType = Literal["run_started", "progress", "sample_completed", "run_finished", "run_failed"]
 
