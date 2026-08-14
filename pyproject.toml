@@ -16,7 +16,7 @@ dependencies = [
 [tool.uv]
 exclude-newer = "7 days"
 override-dependencies = [
-  "nltk==3.9.3",
+  "nltk==3.10.2",
 ]
 constraint-dependencies = [
   "mistralai!=2.4.6",
