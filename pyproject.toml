@@ -10,7 +10,7 @@ dependencies = [
     "pyarrow>=21.0.0",
     "pyyaml>=6.0.2",
     "pytest>=8.3.0",
-    "uvicorn>=0.34.0",
+    "uvicorn>=0.54.0",
 ]
 
 [dependency-groups]
