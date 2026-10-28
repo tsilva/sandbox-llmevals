@@ -30,24 +30,24 @@ jobs:
 
       - name: Install locked dependencies
         run: |
-          uv lock --check --no-config
-          uv sync --frozen --no-config
+          uv lock --check
+          uv sync --frozen
 
       - name: Audit locked dependencies
         run: >-
-          uv audit --locked --no-config
+          uv audit --locked
           --ignore-until-fixed GHSA-w8v5-vhqr-4h9v
 
       - name: Check formatting
-        run: uv run --no-config ruff format --check .
+        run: uv run ruff format --check .
 
       - name: Lint
-        run: uv run --no-config ruff check .
+        run: uv run ruff check .
 
       - name: Test
-        run: uv run --no-config pytest -q
+        run: uv run pytest -q
 
       - name: Smoke-test imports and CLI
         run: |
-          uv run --no-config python -c "import lighteval, litellm, rouge_score"
-          uv run --no-config python -m llmevals.cli --help
+          uv run python -c "import lighteval, litellm, rouge_score"
+          uv run python -m llmevals.cli --help
